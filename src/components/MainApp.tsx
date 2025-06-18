@@ -8,10 +8,23 @@ import { CollegeDashboard } from './dashboard/CollegeDashboard';
 import { FlashcardVault } from './flashcards/FlashcardVault';
 import { AIAssistant } from './AIAssistant';
 import { MobileNavigation } from './layout/MobileNavigation';
+import { Button } from '@/components/ui/button';
 
 export const MainApp = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Not authenticated - show sign in
   if (!isAuthenticated) {
@@ -43,6 +56,14 @@ export const MainApp = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -59,7 +80,20 @@ export const MainApp = () => {
               </p>
             </div>
           </div>
-          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+          <div className="flex items-center space-x-2">
+            <div className="text-right text-xs text-gray-500">
+              <p>Level {user.current_level}</p>
+              <p>{user.experience_points} XP</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleSignOut}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 

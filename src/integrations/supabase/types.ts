@@ -24,6 +24,36 @@ export type Database = {
         }
         Relationships: []
       }
+      achievements: {
+        Row: {
+          achievement_name: string
+          achievement_type: string
+          description: string | null
+          earned_at: string
+          experience_points: number | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_name: string
+          achievement_type: string
+          description?: string | null
+          earned_at?: string
+          experience_points?: number | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_name?: string
+          achievement_type?: string
+          description?: string | null
+          earned_at?: string
+          experience_points?: number | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       channel_members: {
         Row: {
           channel_id: string
@@ -179,6 +209,39 @@ export type Database = {
           },
         ]
       }
+      daily_plans: {
+        Row: {
+          completion_percentage: number | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          plan_content: Json
+          plan_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          plan_content: Json
+          plan_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          plan_content?: Json
+          plan_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string | null
@@ -256,6 +319,54 @@ export type Database = {
           max_attendees?: number | null
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      flashcards: {
+        Row: {
+          answer: string
+          created_at: string
+          difficulty: string
+          id: string
+          last_reviewed: string | null
+          mastery_level: number | null
+          next_review: string | null
+          question: string
+          review_count: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          next_review?: string | null
+          question: string
+          review_count?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          next_review?: string | null
+          question?: string
+          review_count?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -776,6 +887,42 @@ export type Database = {
           },
         ]
       }
+      study_sessions: {
+        Row: {
+          correct_answers: number | null
+          created_at: string
+          duration_minutes: number
+          flashcards_reviewed: number | null
+          id: string
+          session_date: string
+          session_type: string
+          topics_covered: string[] | null
+          user_id: string
+        }
+        Insert: {
+          correct_answers?: number | null
+          created_at?: string
+          duration_minutes: number
+          flashcards_reviewed?: number | null
+          id?: string
+          session_date?: string
+          session_type: string
+          topics_covered?: string[] | null
+          user_id: string
+        }
+        Update: {
+          correct_answers?: number | null
+          created_at?: string
+          duration_minutes?: number
+          flashcards_reviewed?: number | null
+          id?: string
+          session_date?: string
+          session_type?: string
+          topics_covered?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       typing_indicators: {
         Row: {
           conversation_id: string
@@ -919,6 +1066,57 @@ export type Database = {
           last_seen?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          college: string | null
+          created_at: string
+          current_level: number | null
+          email: string
+          exam_type: string | null
+          experience_points: number | null
+          id: string
+          name: string
+          semester: number | null
+          study_streak: number | null
+          total_study_hours: number | null
+          updated_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          college?: string | null
+          created_at?: string
+          current_level?: number | null
+          email: string
+          exam_type?: string | null
+          experience_points?: number | null
+          id?: string
+          name: string
+          semester?: number | null
+          study_streak?: number | null
+          total_study_hours?: number | null
+          updated_at?: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          college?: string | null
+          created_at?: string
+          current_level?: number | null
+          email?: string
+          exam_type?: string | null
+          experience_points?: number | null
+          id?: string
+          name?: string
+          semester?: number | null
+          study_streak?: number | null
+          total_study_hours?: number | null
+          updated_at?: string
+          user_id?: string
+          user_type?: string
         }
         Relationships: []
       }
