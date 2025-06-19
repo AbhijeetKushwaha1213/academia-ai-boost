@@ -77,19 +77,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        // Ensure user_type is properly typed
+        const userType = data.user_type === 'college' ? 'college' : 'exam';
+        
         setUser({
           id: data.id,
           user_id: data.user_id,
           name: data.name,
           email: data.email,
-          userType: data.user_type,
+          userType: userType,
           examType: data.exam_type,
           college: data.college,
           semester: data.semester,
-          study_streak: data.study_streak,
-          total_study_hours: data.total_study_hours,
-          current_level: data.current_level,
-          experience_points: data.experience_points
+          study_streak: data.study_streak || 0,
+          total_study_hours: data.total_study_hours || 0,
+          current_level: data.current_level || 1,
+          experience_points: data.experience_points || 0
         });
       }
     } catch (error) {
@@ -135,7 +138,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         options: {
           data: {
             name: name,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
