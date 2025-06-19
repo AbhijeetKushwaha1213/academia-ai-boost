@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
@@ -7,6 +8,8 @@ import { CollegeDashboard } from './dashboard/CollegeDashboard';
 import { FlashcardVault } from './flashcards/FlashcardVault';
 import { AIChat } from './chat/AIChat';
 import { AIFlashcardGenerator } from './ai/AIFlashcardGenerator';
+import { StudyCalendar } from './calendar/StudyCalendar';
+import { ProgressChart } from './calendar/ProgressChart';
 import { MobileNavigation } from './layout/MobileNavigation';
 import { Button } from '@/components/ui/button';
 
