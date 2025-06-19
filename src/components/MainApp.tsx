@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
@@ -6,7 +5,8 @@ import { UserTypeSelection } from './onboarding/UserTypeSelection';
 import { ExamDashboard } from './dashboard/ExamDashboard';
 import { CollegeDashboard } from './dashboard/CollegeDashboard';
 import { FlashcardVault } from './flashcards/FlashcardVault';
-import { AIAssistant } from './AIAssistant';
+import { AIChat } from './chat/AIChat';
+import { AIFlashcardGenerator } from './ai/AIFlashcardGenerator';
 import { MobileNavigation } from './layout/MobileNavigation';
 import { Button } from '@/components/ui/button';
 
@@ -44,7 +44,7 @@ export const MainApp = () => {
       case 'flashcards':
         return <FlashcardVault />;
       case 'ai-chat':
-        return <AIAssistant />;
+        return <AIChat />;
       case 'calendar':
         return <div className="p-6 text-center text-gray-500">Progress Calendar Coming Soon</div>;
       case 'achievements':
