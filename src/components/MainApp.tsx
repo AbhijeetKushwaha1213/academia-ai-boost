@@ -9,14 +9,18 @@ import { FlashcardVault } from './flashcards/FlashcardVault';
 import { AIChat } from './chat/AIChat';
 import { AIFlashcardGenerator } from './ai/AIFlashcardGenerator';
 import { StudyCalendar } from './calendar/StudyCalendar';
-import { ProgressChart } from './calendar/ProgressChart';
+import { StudyProgress } from '../StudyProgress';
+import { SettingsPage } from './settings/SettingsPage';
+import { ProfilePage } from './profile/ProfilePage';
+import { AchievementsPage } from './achievements/AchievementsPage';
 import { MobileNavigation } from './layout/MobileNavigation';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useToast } from '@/hooks/use-toast';
-import { WifiOff, Wifi } from 'lucide-react';
+import { WifiOff, Wifi, User } from 'lucide-react';
 
 export const MainApp = () => {
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
@@ -108,10 +112,14 @@ export const MainApp = () => {
         return <AIFlashcardGenerator />;
       case 'calendar':
         return <StudyCalendar />;
+      case 'progress':
+        return <StudyProgress />;
       case 'achievements':
-        return <div className="p-6 text-center text-gray-500">Achievements Coming Soon</div>;
+        return <AchievementsPage />;
       case 'settings':
-        return <div className="p-6 text-center text-gray-500">Settings Coming Soon</div>;
+        return <SettingsPage />;
+      case 'profile':
+        return <ProfilePage />;
       default:
         return user.userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
     }
@@ -131,6 +139,15 @@ export const MainApp = () => {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
@@ -145,12 +162,12 @@ export const MainApp = () => {
                 <div className="flex items-center space-x-2">
                   <h1 className="font-bold text-gray-900">StudyMate AI</h1>
                   {!isOnline && (
-                    <div title="Offline">
+                    <div>
                       <WifiOff className="w-4 h-4 text-red-500" />
                     </div>
                   )}
                   {isOnline && (
-                    <div title="Online">
+                    <div>
                       <Wifi className="w-4 h-4 text-green-500" />
                     </div>
                   )}
@@ -160,11 +177,26 @@ export const MainApp = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="text-right text-xs text-gray-500">
+            <div className="flex items-center space-x-3">
+              <div className="text-right text-xs text-gray-500 hidden md:block">
                 <p>Level {user.current_level || 1}</p>
                 <p>{user.experience_points || 0} XP</p>
               </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab('profile')}
+                className="p-0 h-auto"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                    {getInitials(user.name || 'U')}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+              
               <Button 
                 variant="ghost" 
                 size="sm" 
