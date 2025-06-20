@@ -26,7 +26,7 @@ export const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationPro
   const [showMore, setShowMore] = React.useState(false);
 
   return (
-    <>
+    <div className="lg:hidden">
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex justify-around py-2">
           {tabs.map((tab) => {
@@ -98,6 +98,6 @@ export const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationPro
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
