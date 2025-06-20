@@ -22,6 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    console.error('ErrorBoundary: Error caught:', error);
     return {
       hasError: true,
       error,
@@ -41,15 +42,26 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Error:', error);
     console.error('Error Info:', errorInfo);
     console.error('Component Stack:', errorInfo.componentStack);
+    
+    // Log current app state for debugging
+    const currentUrl = window.location.href;
+    const userAgent = navigator.userAgent;
+    console.error('Current URL:', currentUrl);
+    console.error('User Agent:', userAgent);
+    console.error('Local Storage Keys:', Object.keys(localStorage));
+    
     console.groupEnd();
   }
 
   handleReset = () => {
+    console.log('ErrorBoundary: Resetting error state');
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
   render() {
     if (this.state.hasError) {
+      console.log('ErrorBoundary: Rendering error UI');
+      
       if (this.props.fallback) {
         return this.props.fallback;
       }
@@ -82,7 +94,10 @@ export class ErrorBoundary extends Component<Props, State> {
                 
                 <Button 
                   variant="outline"
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    console.log('ErrorBoundary: Reloading page');
+                    window.location.reload();
+                  }}
                 >
                   Reload Page
                 </Button>

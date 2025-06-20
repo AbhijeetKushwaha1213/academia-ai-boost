@@ -25,6 +25,8 @@ export const MainApp = () => {
   const { measureComponentRender } = usePerformanceMonitor();
   const { toast } = useToast();
 
+  console.log('MainApp render - Auth state:', { isAuthenticated, isLoading, user: user?.id });
+
   useEffect(() => {
     const startTime = performance.now();
     
@@ -59,6 +61,7 @@ export const MainApp = () => {
 
   // Show loading spinner while checking authentication
   if (isLoading) {
+    console.log('MainApp: Showing loading state');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -71,6 +74,7 @@ export const MainApp = () => {
 
   // Not authenticated - show sign in
   if (!isAuthenticated) {
+    console.log('MainApp: User not authenticated, showing SignInPage');
     return (
       <ErrorBoundary>
         <SignInPage />
@@ -80,6 +84,7 @@ export const MainApp = () => {
 
   // Authenticated but no user type selected
   if (!user?.userType) {
+    console.log('MainApp: User authenticated but no userType, showing UserTypeSelection');
     return (
       <ErrorBoundary>
         <UserTypeSelection />
@@ -87,8 +92,11 @@ export const MainApp = () => {
     );
   }
 
+  console.log('MainApp: Rendering main app with activeTab:', activeTab);
+
   // Main app content based on active tab
   const renderContent = () => {
+    console.log('MainApp: Rendering content for tab:', activeTab);
     switch (activeTab) {
       case 'home':
         return user.userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
@@ -111,6 +119,7 @@ export const MainApp = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('MainApp: Signing out user');
       await signOut();
     } catch (error) {
       console.error('Sign out error:', error);
@@ -153,8 +162,8 @@ export const MainApp = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className="text-right text-xs text-gray-500">
-                <p>Level {user.current_level}</p>
-                <p>{user.experience_points} XP</p>
+                <p>Level {user.current_level || 1}</p>
+                <p>{user.experience_points || 0} XP</p>
               </div>
               <Button 
                 variant="ghost" 
