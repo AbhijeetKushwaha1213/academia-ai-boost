@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { Card } from '@/components/ui/card';
@@ -39,7 +38,6 @@ export const ProfilePage = () => {
       <Card className="p-6">
         <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
           <Avatar className="w-24 h-24">
-            <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
               {getInitials(user.name || 'U')}
             </AvatarFallback>

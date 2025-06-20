@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
@@ -190,7 +189,6 @@ export const MainApp = () => {
                 className="p-0 h-auto"
               >
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
                     {getInitials(user.name || 'U')}
                   </AvatarFallback>

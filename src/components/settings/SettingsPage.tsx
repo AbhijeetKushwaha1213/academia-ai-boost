@@ -20,7 +20,7 @@ export const SettingsPage = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    userType: user?.userType || 'exam',
+    userType: user?.userType || 'exam' as 'exam' | 'college',
     examType: user?.examType || '',
     college: user?.college || '',
     semester: user?.semester || 1,
@@ -80,6 +80,11 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleUserTypeChange = (value: string) => {
+    const userType = value as 'exam' | 'college';
+    setFormData({ ...formData, userType });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -118,7 +123,7 @@ export const SettingsPage = () => {
 
           <div>
             <Label htmlFor="userType">User Type</Label>
-            <Select value={formData.userType} onValueChange={(value) => setFormData({ ...formData, userType: value })}>
+            <Select value={formData.userType} onValueChange={handleUserTypeChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select user type" />
               </SelectTrigger>
