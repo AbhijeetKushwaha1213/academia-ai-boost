@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
@@ -8,7 +9,7 @@ import { FlashcardVault } from './flashcards/FlashcardVault';
 import { AIChat } from './chat/AIChat';
 import { AIFlashcardGenerator } from './ai/AIFlashcardGenerator';
 import { StudyCalendar } from './calendar/StudyCalendar';
-import { StudyProgress } from '../StudyProgress';
+import { StudyProgress } from './StudyProgress';
 import { SettingsPage } from './settings/SettingsPage';
 import { ProfilePage } from './profile/ProfilePage';
 import { AchievementsPage } from './achievements/AchievementsPage';
