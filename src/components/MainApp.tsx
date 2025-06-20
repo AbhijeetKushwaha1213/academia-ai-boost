@@ -136,10 +136,14 @@ export const MainApp = () => {
                 <div className="flex items-center space-x-2">
                   <h1 className="font-bold text-gray-900">StudyMate AI</h1>
                   {!isOnline && (
-                    <WifiOff className="w-4 h-4 text-red-500" title="Offline" />
+                    <div title="Offline">
+                      <WifiOff className="w-4 h-4 text-red-500" />
+                    </div>
                   )}
                   {isOnline && (
-                    <Wifi className="w-4 h-4 text-green-500" title="Online" />
+                    <div title="Online">
+                      <Wifi className="w-4 h-4 text-green-500" />
+                    </div>
                   )}
                 </div>
                 <p className="text-xs text-gray-500">
