@@ -19,26 +19,35 @@ interface ContentRendererProps {
 export const ContentRenderer = ({ activeTab, userType }: ContentRendererProps) => {
   console.log('ContentRenderer: Rendering content for tab:', activeTab);
   
-  switch (activeTab) {
-    case 'home':
-      return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
-    case 'flashcards':
-      return <FlashcardVault />;
-    case 'ai-chat':
-      return <AIChat />;
-    case 'ai-generator':
-      return <AIFlashcardGenerator />;
-    case 'calendar':
-      return <StudyCalendar />;
-    case 'progress':
-      return <StudyProgress />;
-    case 'achievements':
-      return <AchievementsPage />;
-    case 'settings':
-      return <SettingsPage />;
-    case 'profile':
-      return <ProfilePage />;
-    default:
-      return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
-  }
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
+      case 'flashcards':
+        return <FlashcardVault />;
+      case 'ai-chat':
+        return <AIChat />;
+      case 'ai-generator':
+        return <AIFlashcardGenerator />;
+      case 'calendar':
+        return <StudyCalendar />;
+      case 'progress':
+        return <StudyProgress />;
+      case 'achievements':
+        return <AchievementsPage />;
+      case 'settings':
+        return <SettingsPage />;
+      case 'profile':
+        return <ProfilePage />;
+      default:
+        console.warn('Unknown tab:', activeTab, 'falling back to home');
+        return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
+    }
+  };
+
+  return (
+    <div className="w-full">
+      {renderContent()}
+    </div>
+  );
 };
