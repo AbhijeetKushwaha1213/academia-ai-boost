@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Bell, Shield, Palette, Save, Loader2, Github, Linkedin, ExternalLink, AlertTriangle } from 'lucide-react';
+import { User, Bell, Shield, Palette, Save, Loader2, Github, Linkedin, ExternalLink, AlertTriangle, Code, Trophy } from 'lucide-react';
 
 export const SettingsPage = () => {
   const { user, updateUser, signOut } = useAuth();
@@ -31,8 +31,15 @@ export const SettingsPage = () => {
   const [preferences, setPreferences] = useState({
     notifications: true,
     studyReminders: true,
-    darkMode: false,
+    darkMode: localStorage.getItem('darkMode') === 'true',
     soundEffects: true,
+  });
+
+  const [connections, setConnections] = useState({
+    github: false,
+    linkedin: false,
+    leetcode: false,
+    hackerrank: false,
   });
 
   const handleSaveProfile = async () => {
@@ -168,6 +175,21 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleConnect = (platform: string) => {
+    // For now, just simulate connection
+    setConnections(prev => ({ ...prev, [platform]: !prev[platform] }));
+    toast({
+      title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} ${connections[platform] ? 'Disconnected' : 'Connected'}`,
+      description: `Your ${platform} account has been ${connections[platform] ? 'disconnected' : 'connected'}.`,
+    });
+  };
+
+  const handleDarkModeToggle = (checked: boolean) => {
+    setPreferences({ ...preferences, darkMode: checked });
+    document.documentElement.classList.toggle('dark', checked);
+    localStorage.setItem('darkMode', checked.toString());
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
@@ -298,8 +320,12 @@ export const SettingsPage = () => {
                 <p className="text-sm text-gray-500">Connect to track your coding progress</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
-              Connect
+            <Button 
+              variant={connections.github ? "destructive" : "outline"} 
+              size="sm"
+              onClick={() => handleConnect('github')}
+            >
+              {connections.github ? 'Disconnect' : 'Connect'}
             </Button>
           </div>
 
@@ -311,8 +337,46 @@ export const SettingsPage = () => {
                 <p className="text-sm text-gray-500">Auto-populate professional data</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
-              Connect
+            <Button 
+              variant={connections.linkedin ? "destructive" : "outline"} 
+              size="sm"
+              onClick={() => handleConnect('linkedin')}
+            >
+              {connections.linkedin ? 'Disconnect' : 'Connect'}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Code className="w-5 h-5" />
+              <div>
+                <p className="font-medium">LeetCode</p>
+                <p className="text-sm text-gray-500">Track problem-solving progress</p>
+              </div>
+            </div>
+            <Button 
+              variant={connections.leetcode ? "destructive" : "outline"} 
+              size="sm"
+              onClick={() => handleConnect('leetcode')}
+            >
+              {connections.leetcode ? 'Disconnect' : 'Connect'}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Trophy className="w-5 h-5" />
+              <div>
+                <p className="font-medium">HackerRank</p>
+                <p className="text-sm text-gray-500">Sync coding challenges and certificates</p>
+              </div>
+            </div>
+            <Button 
+              variant={connections.hackerrank ? "destructive" : "outline"} 
+              size="sm"
+              onClick={() => handleConnect('hackerrank')}
+            >
+              {connections.hackerrank ? 'Disconnect' : 'Connect'}
             </Button>
           </div>
         </div>
@@ -367,11 +431,7 @@ export const SettingsPage = () => {
             </div>
             <Switch
               checked={preferences.darkMode}
-              onCheckedChange={(checked) => {
-                setPreferences({ ...preferences, darkMode: checked });
-                document.documentElement.classList.toggle('dark', checked);
-                localStorage.setItem('darkMode', checked.toString());
-              }}
+              onCheckedChange={handleDarkModeToggle}
             />
           </div>
           

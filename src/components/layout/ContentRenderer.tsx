@@ -1,61 +1,54 @@
 
 import React from 'react';
-import { ExamDashboard } from '../dashboard/ExamDashboard';
 import { CollegeDashboard } from '../dashboard/CollegeDashboard';
+import { ExamDashboard } from '../dashboard/ExamDashboard';
 import { FlashcardVault } from '../flashcards/FlashcardVault';
 import { AIChat } from '../chat/AIChat';
 import { AIFlashcardGenerator } from '../ai/AIFlashcardGenerator';
 import { StudyCalendar } from '../calendar/StudyCalendar';
-import { StudyProgress } from '../StudyProgress';
-import { AchievementsPage } from '../achievements/AchievementsPage';
-import { SettingsPage } from '../settings/SettingsPage';
 import { ProfilePage } from '../profile/ProfilePage';
+import { SettingsPage } from '../settings/SettingsPage';
+import { AchievementsPage } from '../achievements/AchievementsPage';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import { DiscoverResources } from '../discover/DiscoverResources';
+import { useAuth } from '../auth/AuthProvider';
 
 interface ContentRendererProps {
   activeTab: string;
-  userType: 'exam' | 'college';
 }
 
-export const ContentRenderer = ({ activeTab, userType }: ContentRendererProps) => {
-  console.log('ContentRenderer: Rendering content for tab:', activeTab, 'userType:', userType);
-  
+export const ContentRenderer = ({ activeTab }: ContentRendererProps) => {
+  const { user } = useAuth();
+
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        console.log('ContentRenderer: Rendering home dashboard');
-        return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
+        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
       case 'flashcards':
-        console.log('ContentRenderer: Rendering flashcards');
         return <FlashcardVault />;
-      case 'ai-chat':
-        console.log('ContentRenderer: Rendering AI chat');
+      case 'ai':
         return <AIChat />;
-      case 'ai-generator':
-        console.log('ContentRenderer: Rendering AI generator');
+      case 'generate':
         return <AIFlashcardGenerator />;
       case 'calendar':
-        console.log('ContentRenderer: Rendering calendar');
         return <StudyCalendar />;
-      case 'progress':
-        console.log('ContentRenderer: Rendering progress');
-        return <StudyProgress />;
-      case 'achievements':
-        console.log('ContentRenderer: Rendering achievements');
-        return <AchievementsPage />;
-      case 'settings':
-        console.log('ContentRenderer: Rendering settings');
-        return <SettingsPage />;
       case 'profile':
-        console.log('ContentRenderer: Rendering profile');
         return <ProfilePage />;
+      case 'settings':
+        return <SettingsPage />;
+      case 'achievements':
+        return <AchievementsPage />;
+      case 'notifications':
+        return <NotificationCenter />;
+      case 'discover':
+        return <DiscoverResources />;
       default:
-        console.warn('ContentRenderer: Unknown tab:', activeTab, 'falling back to home');
-        return userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
+        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
     }
   };
 
   return (
-    <div className="w-full">
+    <div className="flex-1 overflow-y-auto">
       {renderContent()}
     </div>
   );

@@ -56,16 +56,25 @@ export const useFlashcards = () => {
     mutationFn: async (newFlashcard: Omit<Flashcard, 'id' | 'created_at' | 'updated_at' | 'mastery_level' | 'review_count' | 'last_reviewed' | 'next_review'>) => {
       if (!user?.user_id) throw new Error('User not authenticated');
 
+      console.log('Creating flashcard:', newFlashcard);
+
       const { data, error } = await supabase
         .from('flashcards')
         .insert([{
           ...newFlashcard,
           user_id: user.user_id,
+          mastery_level: 0,
+          review_count: 0,
+          last_reviewed: null,
+          next_review: new Date().toISOString(),
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating flashcard:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -90,7 +99,10 @@ export const useFlashcards = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Flashcard> }) => {
       const { data, error } = await supabase
         .from('flashcards')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id)
         .select()
         .single();
