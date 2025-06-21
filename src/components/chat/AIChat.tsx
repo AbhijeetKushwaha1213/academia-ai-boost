@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, User, Trash2, BookOpen, Target, Lightbulb, Zap } from 'lucide-react';
+import { Bot, Send, User, Trash2, BookOpen, Target, Lightbulb, Zap, Loader2 } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
 
 const quickPrompts = [
   {
@@ -35,6 +36,7 @@ const quickPrompts = [
 export const AIChat = () => {
   const { user } = useAuth();
   const { messages, sendMessage, clearChat, isLoading } = useAIAssistant();
+  const { toast } = useToast();
   const [inputMessage, setInputMessage] = useState('');
   const [subject, setSubject] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,15 +49,35 @@ export const AIChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim()) {
-      sendMessage(inputMessage, subject);
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    
+    try {
+      console.log('AIChat: Sending message:', inputMessage);
+      await sendMessage(inputMessage, subject);
       setInputMessage('');
+    } catch (error) {
+      console.error('AIChat: Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleQuickPrompt = (prompt: string) => {
-    sendMessage(prompt, subject);
+  const handleQuickPrompt = async (prompt: string) => {
+    try {
+      console.log('AIChat: Sending quick prompt:', prompt);
+      await sendMessage(prompt, subject);
+    } catch (error) {
+      console.error('AIChat: Error sending quick prompt:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -167,10 +189,9 @@ export const AIChat = () => {
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                     <div className="bg-gray-100 px-4 py-3 rounded-2xl">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-600">AI is thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -198,7 +219,11 @@ export const AIChat = () => {
             disabled={isLoading || !inputMessage.trim()}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </Card>

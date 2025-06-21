@@ -1,10 +1,15 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   Calendar, 
@@ -13,11 +18,23 @@ import {
   Trophy, 
   BookOpen, 
   TrendingUp,
-  Edit
+  Edit,
+  Save,
+  Loader2
 } from 'lucide-react';
 
 export const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    college: user?.college || '',
+    semester: user?.semester || 1,
+    examType: user?.examType || ''
+  });
 
   if (!user) return null;
 
@@ -32,8 +49,54 @@ export const ProfilePage = () => {
 
   const levelProgress = ((user.experience_points || 0) % 1000) / 1000 * 100;
 
+  const handleSave = async () => {
+    if (!user?.user_id) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          name: formData.name,
+          email: formData.email,
+          college: user.userType === 'college' ? formData.college : null,
+          semester: user.userType === 'college' ? formData.semester : null,
+          exam_type: user.userType === 'exam' ? formData.examType : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.user_id);
+
+      if (error) throw error;
+
+      // Update local user state
+      updateUser({
+        ...user,
+        name: formData.name,
+        email: formData.email,
+        college: formData.college,
+        semester: formData.semester,
+        examType: formData.examType,
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Profile Header */}
       <Card className="p-6">
         <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
@@ -44,28 +107,103 @@ export const ProfilePage = () => {
           </Avatar>
           
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h1>
-            <p className="text-gray-600 mb-2">{user.email}</p>
-            
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-4">
-              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                {user.userType === 'exam' ? 'Exam Preparation' : 'College Student'}
-              </Badge>
-              {user.examType && (
-                <Badge variant="outline">{user.examType}</Badge>
-              )}
-              {user.college && (
-                <Badge variant="outline">{user.college}</Badge>
-              )}
-              {user.semester && (
-                <Badge variant="outline">Semester {user.semester}</Badge>
-              )}
-            </div>
-            
-            <Button variant="outline" size="sm" className="gap-2">
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </Button>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                {user.userType === 'college' && (
+                  <>
+                    <div>
+                      <Label htmlFor="college">College</Label>
+                      <Input
+                        id="college"
+                        value={formData.college}
+                        onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="semester">Semester</Label>
+                      <Input
+                        id="semester"
+                        type="number"
+                        min="1"
+                        max="8"
+                        value={formData.semester}
+                        onChange={(e) => setFormData({ ...formData, semester: parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </>
+                )}
+                {user.userType === 'exam' && (
+                  <div>
+                    <Label htmlFor="examType">Exam Type</Label>
+                    <Input
+                      id="examType"
+                      value={formData.examType}
+                      onChange={(e) => setFormData({ ...formData, examType: e.target.value })}
+                    />
+                  </div>
+                )}
+                <div className="flex space-x-2">
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h1>
+                <p className="text-gray-600 mb-2">{user.email}</p>
+                
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-4">
+                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                    {user.userType === 'exam' ? 'Exam Preparation' : 'College Student'}
+                  </Badge>
+                  {user.examType && (
+                    <Badge variant="outline">{user.examType}</Badge>
+                  )}
+                  {user.college && (
+                    <Badge variant="outline">{user.college}</Badge>
+                  )}
+                  {user.semester && (
+                    <Badge variant="outline">Semester {user.semester}</Badge>
+                  )}
+                </div>
+                
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
+                  <Edit className="w-4 h-4" />
+                  Edit Profile
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </Card>

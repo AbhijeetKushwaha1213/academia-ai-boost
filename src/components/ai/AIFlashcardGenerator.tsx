@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Plus, X } from 'lucide-react';
+import { Wand2, Plus, X, Upload, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { FileUploadComponent } from './FileUploadComponent';
 
 export const AIFlashcardGenerator = () => {
   const { user } = useAuth();
@@ -23,9 +24,12 @@ export const AIFlashcardGenerator = () => {
   const [generatedCards, setGeneratedCards] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [uploadedContent, setUploadedContent] = useState('');
 
   const generateFlashcards = async () => {
-    if (!content.trim() && !topic.trim()) {
+    const finalContent = content.trim() || uploadedContent.trim();
+    
+    if (!finalContent && !topic.trim()) {
       toast({
         title: "Input Required",
         description: "Please provide either content to study or a topic.",
@@ -37,8 +41,10 @@ export const AIFlashcardGenerator = () => {
     setIsGenerating(true);
     
     try {
-      const prompt = content.trim() 
-        ? `Create ${count} flashcards from this content: ${content}`
+      console.log('AIFlashcardGenerator: Starting generation...');
+      
+      const prompt = finalContent
+        ? `Create ${count} flashcards from this content: ${finalContent}`
         : `Create ${count} flashcards about: ${topic}`;
 
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
@@ -53,7 +59,12 @@ export const AIFlashcardGenerator = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('AIFlashcardGenerator: Edge function error:', error);
+        throw error;
+      }
+
+      console.log('AIFlashcardGenerator: Raw response:', data);
 
       // Try to parse the JSON response
       let cards = [];
@@ -62,17 +73,23 @@ export const AIFlashcardGenerator = () => {
         if (jsonMatch) {
           cards = JSON.parse(jsonMatch[0]);
         } else {
-          throw new Error('No JSON array found in response');
+          // Fallback: try to parse the entire response as JSON
+          cards = JSON.parse(data.response);
         }
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', data.response);
-        toast({
-          title: "Generation Error",
-          description: "Failed to generate flashcards. Please try again.",
-          variant: "destructive",
-        });
-        return;
+      }catch (parseError) {
+        console.error('AIFlashcardGenerator: Failed to parse AI response:', data.response);
+        // Create fallback cards if parsing fails
+        cards = [
+          {
+            title: topic || "Study Card",
+            question: finalContent.substring(0, 100) + "...",
+            answer: "Please try generating again with more specific content.",
+            tags: [topic || "general"]
+          }
+        ];
       }
+
+      console.log('AIFlashcardGenerator: Parsed cards:', cards);
 
       setGeneratedCards(cards.map((card: any, index: number) => ({
         ...card,
@@ -86,7 +103,7 @@ export const AIFlashcardGenerator = () => {
         description: `Generated ${cards.length} flashcards successfully!`,
       });
     } catch (error) {
-      console.error('Error generating flashcards:', error);
+      console.error('AIFlashcardGenerator: Error generating flashcards:', error);
       toast({
         title: "Error",
         description: "Failed to generate flashcards. Please try again.",
@@ -120,6 +137,8 @@ export const AIFlashcardGenerator = () => {
     let createdCount = 0;
 
     try {
+      console.log('AIFlashcardGenerator: Creating selected cards:', selectedCards);
+      
       for (const card of selectedCards) {
         try {
           createFlashcard({
@@ -131,7 +150,7 @@ export const AIFlashcardGenerator = () => {
           });
           createdCount++;
         } catch (error) {
-          console.error('Error creating card:', error);
+          console.error('AIFlashcardGenerator: Error creating card:', error);
         }
       }
 
@@ -143,14 +162,25 @@ export const AIFlashcardGenerator = () => {
         setGeneratedCards([]);
         setContent('');
         setTopic('');
+        setUploadedContent('');
       }
     } finally {
       setIsCreating(false);
     }
   };
 
+  const handleFileContent = (fileContent: string, fileName: string) => {
+    setUploadedContent(fileContent);
+    if (fileContent) {
+      toast({
+        title: "File Processed",
+        description: `Content from ${fileName} has been loaded.`,
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Wand2 className="w-5 h-5 text-purple-600" />
@@ -158,6 +188,11 @@ export const AIFlashcardGenerator = () => {
         </div>
 
         <div className="space-y-4">
+          {/* File Upload Component */}
+          <FileUploadComponent onFileContent={handleFileContent} />
+
+          <div className="text-center text-sm text-gray-500">OR</div>
+
           <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block">
               Study Content (paste text, notes, etc.)
@@ -220,11 +255,20 @@ export const AIFlashcardGenerator = () => {
 
           <Button 
             onClick={generateFlashcards}
-            disabled={isGenerating || (!content.trim() && !topic.trim())}
+            disabled={isGenerating || (!content.trim() && !topic.trim() && !uploadedContent.trim())}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            <Wand2 className="w-4 h-4 mr-2" />
-            {isGenerating ? 'Generating...' : 'Generate Flashcards'}
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Flashcards
+              </>
+            )}
           </Button>
         </div>
       </Card>
@@ -239,8 +283,17 @@ export const AIFlashcardGenerator = () => {
               disabled={isCreating || !generatedCards.some(card => card.selected)}
               className="bg-green-600 hover:bg-green-700"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              {isCreating ? 'Creating...' : 'Create Selected'}
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Selected
+                </>
+              )}
             </Button>
           </div>
 

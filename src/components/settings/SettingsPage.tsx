@@ -10,12 +10,14 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Bell, Shield, Palette, Save, Loader2 } from 'lucide-react';
+import { User, Bell, Shield, Palette, Save, Loader2, Github, Linkedin, ExternalLink, AlertTriangle } from 'lucide-react';
 
 export const SettingsPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, signOut } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -38,6 +40,8 @@ export const SettingsPage = () => {
 
     setIsLoading(true);
     try {
+      console.log('SettingsPage: Saving profile...', formData);
+      
       const { error } = await supabase
         .from('user_profiles')
         .update({
@@ -51,7 +55,10 @@ export const SettingsPage = () => {
         })
         .eq('user_id', user.user_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('SettingsPage: Error updating profile:', error);
+        throw error;
+      }
 
       // Update local user state
       updateUser({
@@ -69,7 +76,7 @@ export const SettingsPage = () => {
         description: "Your profile has been saved successfully.",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('SettingsPage: Error updating profile:', error);
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
@@ -85,10 +92,89 @@ export const SettingsPage = () => {
     setFormData({ ...formData, userType });
   };
 
+  const handleChangePassword = async () => {
+    try {
+      if (!user?.email) return;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for password reset instructions.",
+      });
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.user_id) return;
+
+    setIsDeletingAccount(true);
+    try {
+      // First delete user profile data
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', user.user_id);
+
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+      }
+
+      // Sign out the user
+      await signOut();
+
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Sign Out Error", 
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
+    <div className="space-y-6 pb-20">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <Button onClick={handleSignOut} variant="outline">
+          Sign Out
+        </Button>
       </div>
 
       {/* Profile Settings */}
@@ -196,6 +282,42 @@ export const SettingsPage = () => {
         </div>
       </Card>
 
+      {/* Integrations */}
+      <Card className="p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <ExternalLink className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-lg font-semibold">Connected Accounts</h2>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Github className="w-5 h-5" />
+              <div>
+                <p className="font-medium">GitHub</p>
+                <p className="text-sm text-gray-500">Connect to track your coding progress</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm">
+              Connect
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Linkedin className="w-5 h-5" />
+              <div>
+                <p className="font-medium">LinkedIn</p>
+                <p className="text-sm text-gray-500">Auto-populate professional data</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm">
+              Connect
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* Notification Settings */}
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
@@ -245,7 +367,11 @@ export const SettingsPage = () => {
             </div>
             <Switch
               checked={preferences.darkMode}
-              onCheckedChange={(checked) => setPreferences({ ...preferences, darkMode: checked })}
+              onCheckedChange={(checked) => {
+                setPreferences({ ...preferences, darkMode: checked });
+                document.documentElement.classList.toggle('dark', checked);
+                localStorage.setItem('darkMode', checked.toString());
+              }}
             />
           </div>
           
@@ -264,7 +390,7 @@ export const SettingsPage = () => {
         </div>
       </Card>
 
-      {/* Privacy Settings */}
+      {/* Privacy & Security Settings */}
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Shield className="w-5 h-5 text-indigo-600" />
@@ -272,12 +398,56 @@ export const SettingsPage = () => {
         </div>
         
         <div className="space-y-4">
-          <Button variant="outline" className="w-full md:w-auto">
+          <Button variant="outline" className="w-full md:w-auto" onClick={handleChangePassword}>
             Change Password
           </Button>
-          <Button variant="outline" className="w-full md:w-auto text-red-600 hover:text-red-700">
-            Delete Account
-          </Button>
+          
+          {!showDeleteConfirm ? (
+            <Button 
+              variant="outline" 
+              className="w-full md:w-auto text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Delete Account
+            </Button>
+          ) : (
+            <Card className="p-4 border-red-200 bg-red-50">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-900">Delete Account</h4>
+                  <p className="text-sm text-red-700 mb-3">
+                    This action cannot be undone. All your data will be permanently deleted.
+                  </p>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount}
+                    >
+                      {isDeletingAccount ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        'Yes, Delete My Account'
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       </Card>
     </div>

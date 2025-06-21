@@ -60,6 +60,10 @@ export const MainApp = () => {
       });
     }
 
+    // Load dark mode preference
+    const darkMode = localStorage.getItem('darkMode') === 'true';
+    document.documentElement.classList.toggle('dark', darkMode);
+
     return () => {
       measureComponentRender('MainApp', startTime);
     };
