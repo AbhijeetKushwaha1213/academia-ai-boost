@@ -3,20 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
 import { UserTypeSelection } from './onboarding/UserTypeSelection';
-import { ExamDashboard } from './dashboard/ExamDashboard';
-import { CollegeDashboard } from './dashboard/CollegeDashboard';
-import { FlashcardVault } from './flashcards/FlashcardVault';
-import { AIChat } from './chat/AIChat';
-import { AIFlashcardGenerator } from './ai/AIFlashcardGenerator';
-import { StudyCalendar } from './calendar/StudyCalendar';
-import { ProgressChart } from './calendar/ProgressChart';
-import { MobileNavigation } from './layout/MobileNavigation';
+import { AppLayout } from './layout/AppLayout';
 import { ErrorBoundary } from './ErrorBoundary';
-import { Button } from '@/components/ui/button';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useToast } from '@/hooks/use-toast';
-import { WifiOff, Wifi } from 'lucide-react';
 
 export const MainApp = () => {
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
@@ -26,6 +18,21 @@ export const MainApp = () => {
   const { toast } = useToast();
 
   console.log('MainApp render - Auth state:', { isAuthenticated, isLoading, user: user?.id });
+
+  // Add keyboard shortcuts
+  useKeyboardShortcuts({
+    onNavigate: setActiveTab,
+    onQuickAction: (action) => {
+      switch (action) {
+        case 'create-flashcard':
+          setActiveTab('flashcards');
+          break;
+        case 'search':
+          // Focus search if available
+          break;
+      }
+    }
+  });
 
   useEffect(() => {
     const startTime = performance.now();
@@ -94,29 +101,6 @@ export const MainApp = () => {
 
   console.log('MainApp: Rendering main app with activeTab:', activeTab);
 
-  // Main app content based on active tab
-  const renderContent = () => {
-    console.log('MainApp: Rendering content for tab:', activeTab);
-    switch (activeTab) {
-      case 'home':
-        return user.userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
-      case 'flashcards':
-        return <FlashcardVault />;
-      case 'ai-chat':
-        return <AIChat />;
-      case 'ai-generator':
-        return <AIFlashcardGenerator />;
-      case 'calendar':
-        return <StudyCalendar />;
-      case 'achievements':
-        return <div className="p-6 text-center text-gray-500">Achievements Coming Soon</div>;
-      case 'settings':
-        return <div className="p-6 text-center text-gray-500">Settings Coming Soon</div>;
-      default:
-        return user.userType === 'exam' ? <ExamDashboard /> : <CollegeDashboard />;
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       console.log('MainApp: Signing out user');
@@ -133,60 +117,13 @@ export const MainApp = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h1 className="font-bold text-gray-900">StudyMate AI</h1>
-                  {!isOnline && (
-                    <div title="Offline">
-                      <WifiOff className="w-4 h-4 text-red-500" />
-                    </div>
-                  )}
-                  {isOnline && (
-                    <div title="Online">
-                      <Wifi className="w-4 h-4 text-green-500" />
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">
-                  {user.userType === 'exam' ? 'Exam Preparation' : 'College Life'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="text-right text-xs text-gray-500">
-                <p>Level {user.current_level || 1}</p>
-                <p>{user.experience_points || 0} XP</p>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSignOut}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="px-4 py-6 pb-20">
-          <ErrorBoundary>
-            {renderContent()}
-          </ErrorBoundary>
-        </div>
-
-        {/* Bottom Navigation */}
-        <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+      <AppLayout 
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        handleSignOut={handleSignOut}
+        isOnline={isOnline}
+      />
     </ErrorBoundary>
   );
 };

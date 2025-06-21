@@ -4,13 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
-import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
 import { useStudySessions } from '@/hooks/useStudySessions';
-import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 interface CreateSessionDialogProps {
   open: boolean;
@@ -21,95 +18,57 @@ interface CreateSessionDialogProps {
 export const CreateSessionDialog = ({ open, onOpenChange, selectedDate }: CreateSessionDialogProps) => {
   const [sessionType, setSessionType] = useState('');
   const [duration, setDuration] = useState('');
-  const [topics, setTopics] = useState<string[]>([]);
-  const [currentTopic, setCurrentTopic] = useState('');
-  const [description, setDescription] = useState('');
-
+  const [topics, setTopics] = useState('');
+  
   const { createSession, isCreating } = useStudySessions();
-  const { toast } = useToast();
 
-  const sessionTypes = [
-    'Flashcard Review',
-    'Reading',
-    'Practice Problems',
-    'Video Lectures',
-    'Mock Test',
-    'Group Study',
-    'Research',
-    'Writing',
-    'Lab Work',
-    'Revision'
-  ];
-
-  const addTopic = () => {
-    if (currentTopic.trim() && !topics.includes(currentTopic.trim())) {
-      setTopics([...topics, currentTopic.trim()]);
-      setCurrentTopic('');
-    }
-  };
-
-  const removeTopic = (topicToRemove: string) => {
-    setTopics(topics.filter(topic => topic !== topicToRemove));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!sessionType || !duration) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in session type and duration.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!sessionType || !duration) return;
+
+    const topicsArray = topics.split(',').map(t => t.trim()).filter(Boolean);
 
     createSession({
       session_type: sessionType,
       duration_minutes: parseInt(duration),
-      topics_covered: topics,
-      session_date: format(selectedDate, 'yyyy-MM-dd'),
+      topics_covered: topicsArray,
       flashcards_reviewed: 0,
       correct_answers: 0,
+      session_date: format(selectedDate, 'yyyy-MM-dd'),
     });
 
     // Reset form
     setSessionType('');
     setDuration('');
-    setTopics([]);
-    setCurrentTopic('');
-    setDescription('');
+    setTopics('');
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Schedule Study Session</DialogTitle>
-          <p className="text-sm text-gray-600">
-            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-          </p>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="session-type">Session Type</Label>
+          <div>
+            <Label htmlFor="sessionType">Session Type</Label>
             <Select value={sessionType} onValueChange={setSessionType}>
               <SelectTrigger>
                 <SelectValue placeholder="Select session type" />
               </SelectTrigger>
               <SelectContent>
-                {sessionTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
+                <SelectItem value="Review">Review Session</SelectItem>
+                <SelectItem value="New Learning">New Learning</SelectItem>
+                <SelectItem value="Practice">Practice Test</SelectItem>
+                <SelectItem value="Flashcards">Flashcard Review</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="duration">Duration (minutes)</Label>
             <Input
               id="duration"
@@ -117,53 +76,29 @@ export const CreateSessionDialog = ({ open, onOpenChange, selectedDate }: Create
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               placeholder="60"
-              min="1"
+              min="15"
               max="480"
+              required
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Topics to Cover</Label>
-            <div className="flex space-x-2">
-              <Input
-                value={currentTopic}
-                onChange={(e) => setCurrentTopic(e.target.value)}
-                placeholder="Add a topic"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTopic())}
-              />
-              <Button type="button" onClick={addTopic} variant="outline">
-                Add
-              </Button>
-            </div>
-            
-            {topics.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {topics.map((topic) => (
-                  <Badge key={topic} variant="secondary" className="flex items-center gap-1">
-                    {topic}
-                    <X 
-                      className="w-3 h-3 cursor-pointer hover:text-red-500" 
-                      onClick={() => removeTopic(topic)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Notes (Optional)</Label>
+          <div>
+            <Label htmlFor="topics">Topics (comma-separated)</Label>
             <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Any additional notes about this session..."
-              rows={3}
+              id="topics"
+              value={topics}
+              onChange={(e) => setTopics(e.target.value)}
+              placeholder="Mathematics, Physics, Chemistry"
+              rows={2}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating}>
