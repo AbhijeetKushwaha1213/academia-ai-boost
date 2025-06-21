@@ -17,12 +17,22 @@ export const MainApp = () => {
   const { measureComponentRender } = usePerformanceMonitor();
   const { toast } = useToast();
 
-  console.log('MainApp render - Auth state:', { isAuthenticated, isLoading, user: user?.id });
+  console.log('MainApp render - Auth state:', { 
+    isAuthenticated, 
+    isLoading, 
+    user: user?.id, 
+    userType: user?.userType,
+    activeTab 
+  });
 
   // Add keyboard shortcuts
   useKeyboardShortcuts({
-    onNavigate: setActiveTab,
+    onNavigate: (tab: string) => {
+      console.log('MainApp: Keyboard shortcut navigation to:', tab);
+      setActiveTab(tab);
+    },
     onQuickAction: (action) => {
+      console.log('MainApp: Keyboard shortcut quick action:', action);
       switch (action) {
         case 'create-flashcard':
           setActiveTab('flashcards');
@@ -105,6 +115,10 @@ export const MainApp = () => {
     try {
       console.log('MainApp: Signing out user');
       await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
@@ -115,12 +129,17 @@ export const MainApp = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    console.log('MainApp: Tab change requested:', tab);
+    setActiveTab(tab);
+  };
+
   return (
     <ErrorBoundary>
       <AppLayout 
         user={user}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         handleSignOut={handleSignOut}
         isOnline={isOnline}
       />

@@ -5,11 +5,7 @@ import {
   Home, 
   BookOpen, 
   MessageSquare, 
-  Brain, 
   Calendar, 
-  BarChart3,
-  Trophy,
-  Settings,
   User
 } from 'lucide-react';
 
@@ -35,7 +31,10 @@ export const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationPro
             key={item.id}
             variant="ghost"
             size="sm"
-            onClick={() => onTabChange(item.id)}
+            onClick={() => {
+              console.log('MobileNavigation: Navigating to tab:', item.id);
+              onTabChange(item.id);
+            }}
             className={`flex flex-col items-center p-2 h-auto ${
               activeTab === item.id 
                 ? 'text-indigo-600 bg-indigo-50' 

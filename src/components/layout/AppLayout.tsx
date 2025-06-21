@@ -26,12 +26,19 @@ export const AppLayout = ({
 }: AppLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  console.log('AppLayout render - activeTab:', activeTab, 'user:', user?.id);
+
+  const handleTabChange = (tab: string) => {
+    console.log('AppLayout: Tab change to:', tab);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       <DesktopSidebar 
         activeTab={activeTab} 
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onSignOut={handleSignOut}
       />
 
@@ -50,7 +57,8 @@ export const AppLayout = ({
               <DesktopSidebar 
                 activeTab={activeTab} 
                 onTabChange={(tab) => {
-                  setActiveTab(tab);
+                  console.log('AppLayout: Mobile sidebar tab change to:', tab);
+                  handleTabChange(tab);
                   setSidebarOpen(false);
                 }}
                 onSignOut={handleSignOut}
@@ -67,7 +75,7 @@ export const AppLayout = ({
           isOnline={isOnline}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          onNavigate={setActiveTab}
+          onNavigate={handleTabChange}
         />
 
         {/* Page Content */}
@@ -76,17 +84,17 @@ export const AppLayout = ({
             {/* Quick Actions for Home Tab */}
             {activeTab === 'home' && (
               <div className="mb-6">
-                <QuickActions onNavigate={setActiveTab} />
+                <QuickActions onNavigate={handleTabChange} />
               </div>
             )}
             
-            <ContentRenderer activeTab={activeTab} userType={user.userType} />
+            <ContentRenderer activeTab={activeTab} userType={user?.userType || 'exam'} />
           </ErrorBoundary>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };

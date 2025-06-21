@@ -11,28 +11,36 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    errorInfo: null,
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({
+      error,
+      errorInfo,
+    });
   }
 
   private handleReload = () => {
+    console.log('ErrorBoundary: Reloading page');
     window.location.reload();
   };
 
   private handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    console.log('ErrorBoundary: Resetting error state');
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   public render() {
@@ -54,6 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </summary>
                 <pre className="whitespace-pre-wrap">
                   {this.state.error.toString()}
+                  {this.state.errorInfo?.componentStack}
                 </pre>
               </details>
             )}
