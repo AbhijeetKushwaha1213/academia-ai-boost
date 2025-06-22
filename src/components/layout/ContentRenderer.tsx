@@ -15,10 +15,17 @@ import { useAuth } from '../auth/AuthProvider';
 
 interface ContentRendererProps {
   activeTab: string;
+  onNavigate?: (tab: string) => void;
 }
 
-export const ContentRenderer = ({ activeTab }: ContentRendererProps) => {
+export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps) => {
   const { user } = useAuth();
+
+  const handleNavigate = (tab: string) => {
+    if (onNavigate) {
+      onNavigate(tab);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -39,9 +46,9 @@ export const ContentRenderer = ({ activeTab }: ContentRendererProps) => {
       case 'achievements':
         return <AchievementsPage />;
       case 'notifications':
-        return <NotificationCenter />;
+        return <NotificationCenter onNavigate={handleNavigate} />;
       case 'discover':
-        return <DiscoverResources />;
+        return <DiscoverResources onNavigate={handleNavigate} />;
       default:
         return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
     }

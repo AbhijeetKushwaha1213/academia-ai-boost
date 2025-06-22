@@ -88,13 +88,13 @@ export const AppLayout = ({
               </div>
             )}
             
-            <ContentRenderer activeTab={activeTab} userType={user?.userType || 'exam'} />
+            <ContentRenderer activeTab={activeTab} onNavigate={handleTabChange} />
           </ErrorBoundary>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      <MobileNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
     </div>
   );
 };
