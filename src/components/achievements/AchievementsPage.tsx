@@ -1,206 +1,233 @@
 
-import React from 'react';
-import { useAuth } from '../auth/AuthProvider';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '../auth/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Trophy, 
-  Star, 
-  Target, 
-  Calendar, 
-  BookOpen, 
-  Clock, 
-  Zap,
+  Star,
+  Target,
+  BookOpen,
+  Calendar,
   Award,
-  Lock
+  Zap,
+  Crown
 } from 'lucide-react';
+
+interface Achievement {
+  id: string;
+  achievement_type: string;
+  title: string;
+  description?: string;
+  points: number;
+  unlocked_at: string;
+}
 
 export const AchievementsPage = () => {
   const { user } = useAuth();
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalPoints, setTotalPoints] = useState(0);
 
-  const achievements = [
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchAchievements();
+    }
+  }, [user?.user_id]);
+
+  const fetchAchievements = async () => {
+    if (!user?.user_id) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('unlocked_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const achievementsList = data || [];
+      setAchievements(achievementsList);
+      setTotalPoints(achievementsList.reduce((sum, achievement) => sum + (achievement.points || 0), 0));
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getAchievementIcon = (type: string) => {
+    switch (type) {
+      case 'study_streak':
+        return <Calendar className="w-6 h-6" />;
+      case 'flashcard_master':
+        return <BookOpen className="w-6 h-6" />;
+      case 'first_project':
+        return <Target className="w-6 h-6" />;
+      case 'skill_collector':
+        return <Star className="w-6 h-6" />;
+      case 'early_bird':
+        return <Zap className="w-6 h-6" />;
+      case 'milestone':
+        return <Crown className="w-6 h-6" />;
+      default:
+        return <Award className="w-6 h-6" />;
+    }
+  };
+
+  const getAchievementColor = (type: string) => {
+    switch (type) {
+      case 'study_streak':
+        return 'text-blue-600 bg-blue-100';
+      case 'flashcard_master':
+        return 'text-green-600 bg-green-100';
+      case 'first_project':
+        return 'text-purple-600 bg-purple-100';
+      case 'skill_collector':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'early_bird':
+        return 'text-orange-600 bg-orange-100';
+      case 'milestone':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const upcomingAchievements = [
     {
-      id: 1,
-      name: "First Steps",
-      description: "Complete your first study session",
-      icon: Target,
-      earned: true,
-      progress: 100,
-      xp: 50,
-      category: "Study",
-      earnedDate: "2024-01-15"
+      title: "Study Streak Champion",
+      description: "Study for 30 consecutive days",
+      progress: 15,
+      target: 30,
+      points: 500,
+      type: "study_streak"
     },
     {
-      id: 2,
-      name: "Study Streak",
-      description: "Study for 7 consecutive days",
-      icon: Calendar,
-      earned: true,
-      progress: 100,
-      xp: 200,
-      category: "Consistency",
-      earnedDate: "2024-01-22"
-    },
-    {
-      id: 3,
-      name: "Flashcard Master",
-      description: "Review 100 flashcards",
-      icon: BookOpen,
-      earned: false,
-      progress: 67,
-      xp: 150,
-      category: "Study",
-      requirement: "67/100 flashcards reviewed"
-    },
-    {
-      id: 4,
-      name: "Time Keeper",
-      description: "Study for 50 total hours",
-      icon: Clock,
-      earned: false,
+      title: "Flashcard Expert",
+      description: "Create 100 flashcards",
       progress: 45,
-      xp: 300,
-      category: "Study",
-      requirement: "22.5/50 hours completed"
+      target: 100,
+      points: 300,
+      type: "flashcard_master"
     },
     {
-      id: 5,
-      name: "Lightning Round",
-      description: "Answer 20 questions correctly in under 5 minutes",
-      icon: Zap,
-      earned: false,
+      title: "Project Pioneer",
+      description: "Complete your first project",
       progress: 0,
-      xp: 100,
-      category: "Speed",
-      requirement: "Not attempted"
-    },
-    {
-      id: 6,
-      name: "Knowledge Seeker",
-      description: "Create 50 flashcards",
-      icon: Star,
-      earned: false,
-      progress: 24,
-      xp: 250,
-      category: "Creation",
-      requirement: "12/50 flashcards created"
+      target: 1,
+      points: 200,
+      type: "first_project"
     }
   ];
 
-  const earnedAchievements = achievements.filter(a => a.earned);
-  const totalXP = earnedAchievements.reduce((sum, achievement) => sum + achievement.xp, 0);
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Study: "bg-blue-100 text-blue-800",
-      Consistency: "bg-green-100 text-green-800",
-      Speed: "bg-yellow-100 text-yellow-800",
-      Creation: "bg-purple-100 text-purple-800"
-    };
-    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800";
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Achievements</h1>
-        <div className="text-right">
-          <p className="text-sm text-gray-600">Total XP Earned</p>
-          <p className="text-2xl font-bold text-indigo-600">{totalXP}</p>
+    <div className="space-y-6 pb-20">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Achievements</h1>
+        <p className="text-gray-600">Track your learning milestones and celebrate success</p>
+      </div>
+
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Trophy className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Achievement Points</h2>
+              <p className="text-gray-600">Total points earned</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold text-indigo-600">{totalPoints}</div>
+            <p className="text-sm text-gray-500">{achievements.length} achievements</p>
+          </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Achievement Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gold-100 rounded-lg mx-auto mb-2">
-            <Trophy className="w-6 h-6 text-yellow-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{earnedAchievements.length}</p>
-          <p className="text-sm text-gray-600">Achievements Earned</p>
-        </Card>
-
-        <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mx-auto mb-2">
-            <Award className="w-6 h-6 text-indigo-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{achievements.length - earnedAchievements.length}</p>
-          <p className="text-sm text-gray-600">In Progress</p>
-        </Card>
-
-        <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-2">
-            <Star className="w-6 h-6 text-purple-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{Math.round((earnedAchievements.length / achievements.length) * 100)}%</p>
-          <p className="text-sm text-gray-600">Completion Rate</p>
-        </Card>
-      </div>
-
-      {/* Achievements Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {achievements.map((achievement) => {
-          const Icon = achievement.icon;
-          
-          return (
-            <Card key={achievement.id} className={`p-6 relative ${achievement.earned ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200' : 'bg-gray-50'}`}>
-              {achievement.earned && (
-                <div className="absolute top-2 right-2">
-                  <Trophy className="w-6 h-6 text-yellow-600" />
-                </div>
-              )}
-              
-              <div className="flex items-start space-x-4">
-                <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
-                  achievement.earned 
-                    ? 'bg-yellow-100' 
-                    : achievement.progress > 0 
-                      ? 'bg-indigo-100' 
-                      : 'bg-gray-200'
-                }`}>
-                  {achievement.earned ? (
-                    <Icon className="w-6 h-6 text-yellow-600" />
-                  ) : achievement.progress > 0 ? (
-                    <Icon className="w-6 h-6 text-indigo-600" />
-                  ) : (
-                    <Lock className="w-6 h-6 text-gray-400" />
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-gray-900">{achievement.name}</h3>
-                    <Badge variant="secondary" className={getCategoryColor(achievement.category)}>
-                      {achievement.category}
-                    </Badge>
+      {achievements.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Unlocked Achievements</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {achievements.map((achievement) => (
+              <Card key={achievement.id} className="p-4">
+                <div className="flex items-start space-x-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getAchievementColor(achievement.achievement_type)}`}>
+                    {getAchievementIcon(achievement.achievement_type)}
                   </div>
-                  
-                  <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                  
-                  {achievement.earned ? (
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                        Completed
-                      </Badge>
-                      <span className="text-sm font-medium text-yellow-600">+{achievement.xp} XP</span>
+                      <h3 className="font-semibold text-gray-900 truncate">{achievement.title}</h3>
+                      <Badge variant="secondary">+{achievement.points} pts</Badge>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Progress</span>
-                        <span className="font-medium">{achievement.progress}%</span>
-                      </div>
-                      <Progress value={achievement.progress} className="h-2" />
-                      <p className="text-xs text-gray-500">{achievement.requirement}</p>
+                    {achievement.description && (
+                      <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Unlocked {new Date(achievement.unlocked_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Achievements</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {upcomingAchievements.map((achievement, index) => (
+            <Card key={index} className="p-4 opacity-75">
+              <div className="flex items-start space-x-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getAchievementColor(achievement.type)}`}>
+                  {getAchievementIcon(achievement.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 truncate">{achievement.title}</h3>
+                    <Badge variant="outline">+{achievement.points} pts</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <span>Progress</span>
+                      <span>{achievement.progress}/{achievement.target}</span>
                     </div>
-                  )}
+                    <Progress 
+                      value={(achievement.progress / achievement.target) * 100} 
+                      className="h-2"
+                    />
+                  </div>
                 </div>
               </div>
             </Card>
-          );
-        })}
+          ))}
+        </div>
       </div>
+
+      {achievements.length === 0 && (
+        <Card className="p-8 text-center">
+          <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Achievements Yet</h3>
+          <p className="text-gray-600">
+            Start studying, create flashcards, and complete projects to unlock your first achievements!
+          </p>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,11 +17,28 @@ import {
   Youtube,
   Twitter,
   Lightbulb,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 
 interface DiscoverResourcesProps {
   onNavigate?: (tab: string) => void;
+}
+
+interface Skill {
+  id: string;
+  skill_name: string;
+  proficiency_level: number;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  technologies?: string[];
+  github_url?: string;
+  demo_url?: string;
 }
 
 export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
@@ -31,18 +47,65 @@ export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
   const [skillInput, setSkillInput] = useState('');
   const [projectInput, setProjectInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [resources, setResources] = useState<any[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchSkills();
+      fetchProjects();
+    }
+  }, [user?.user_id]);
+
+  const fetchSkills = async () => {
+    if (!user?.user_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_skills')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSkills(data || []);
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    if (!user?.user_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
 
   const handleAddSkill = async () => {
     if (!skillInput.trim() || !user?.user_id) return;
 
+    setIsLoadingSkills(true);
     try {
       const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.user_id);
+        .from('user_skills')
+        .insert({
+          user_id: user.user_id,
+          skill_name: skillInput.trim(),
+          proficiency_level: 1
+        });
 
       if (error) throw error;
 
@@ -51,11 +114,38 @@ export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
         description: `Added "${skillInput}" to your skills.`,
       });
       setSkillInput('');
-    } catch (error) {
+      fetchSkills();
+    } catch (error: any) {
       console.error('Error adding skill:', error);
       toast({
         title: "Error",
-        description: "Failed to add skill. Please try again.",
+        description: error.message?.includes('duplicate') ? "This skill already exists in your list." : "Failed to add skill. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSkills(false);
+    }
+  };
+
+  const handleDeleteSkill = async (skillId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_skills')
+        .delete()
+        .eq('id', skillId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Skill Removed",
+        description: "Skill has been removed from your list.",
+      });
+      fetchSkills();
+    } catch (error) {
+      console.error('Error removing skill:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove skill. Please try again.",
         variant: "destructive",
       });
     }
@@ -64,17 +154,55 @@ export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
   const handleAddProject = async () => {
     if (!projectInput.trim() || !user?.user_id) return;
 
+    setIsLoadingProjects(true);
     try {
+      const { error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user.user_id,
+          title: projectInput.trim(),
+          status: 'active'
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Project Added",
         description: `Added "${projectInput}" to your active projects.`,
       });
       setProjectInput('');
+      fetchProjects();
     } catch (error) {
       console.error('Error adding project:', error);
       toast({
         title: "Error",
         description: "Failed to add project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Project Removed",
+        description: "Project has been removed from your list.",
+      });
+      fetchProjects();
+    } catch (error) {
+      console.error('Error removing project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove project. Please try again.",
         variant: "destructive",
       });
     }
@@ -115,6 +243,20 @@ export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
           difficulty: "Advanced",
           technologies: ["JavaScript", "Canvas API"],
           type: "Educational"
+        },
+        {
+          title: "Flashcard Learning System",
+          description: "Spaced repetition system for efficient learning",
+          difficulty: "Intermediate",
+          technologies: ["React", "TypeScript", "PostgreSQL"],
+          type: "Educational"
+        },
+        {
+          title: "Task Management Dashboard",
+          description: "Collaborative project management tool with real-time updates",
+          difficulty: "Advanced",
+          technologies: ["React", "Node.js", "WebSocket"],
+          type: "Productivity"
         }
       ];
 
@@ -145,39 +287,101 @@ export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Target className="w-5 h-5 text-indigo-600" />
-          <h2 className="text-lg font-semibold">Add New Skill</h2>
+          <h2 className="text-lg font-semibold">Manage Skills</h2>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 mb-4">
           <Input
             value={skillInput}
             onChange={(e) => setSkillInput(e.target.value)}
             placeholder="e.g., React, Python, Data Science..."
             onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
           />
-          <Button onClick={handleAddSkill} disabled={!skillInput.trim()}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button onClick={handleAddSkill} disabled={!skillInput.trim() || isLoadingSkills}>
+            {isLoadingSkills ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             Add Skill
           </Button>
         </div>
+        
+        {skills.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">Your Skills:</h3>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill) => (
+                <div key={skill.id} className="flex items-center gap-1">
+                  <Badge variant="secondary">
+                    {skill.skill_name} (Level {skill.proficiency_level})
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteSkill(skill.id)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Code className="w-5 h-5 text-purple-600" />
-          <h2 className="text-lg font-semibold">Add to Active Projects</h2>
+          <h2 className="text-lg font-semibold">Manage Active Projects</h2>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 mb-4">
           <Input
             value={projectInput}
             onChange={(e) => setProjectInput(e.target.value)}
             placeholder="e.g., Personal Website, Mobile App..."
             onKeyPress={(e) => e.key === 'Enter' && handleAddProject()}
           />
-          <Button onClick={handleAddProject} disabled={!projectInput.trim()}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button onClick={handleAddProject} disabled={!projectInput.trim() || isLoadingProjects}>
+            {isLoadingProjects ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             Add Project
           </Button>
         </div>
+
+        {projects.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">Your Projects:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {projects.map((project) => (
+                <Card key={project.id} className="p-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{project.title}</h4>
+                      {project.description && (
+                        <p className="text-xs text-gray-600 mt-1">{project.description}</p>
+                      )}
+                      <Badge variant="outline" className="mt-2 text-xs">
+                        {project.status}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteProject(project.id)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="p-6">

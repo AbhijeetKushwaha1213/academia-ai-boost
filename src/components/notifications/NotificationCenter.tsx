@@ -1,228 +1,286 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '../auth/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Bell, 
-  X, 
   Check, 
-  Clock, 
-  Trophy, 
+  CheckCheck, 
   Calendar,
-  BookOpen
+  Star,
+  AlertCircle,
+  Info,
+  Trash2,
+  Settings
 } from 'lucide-react';
+
+interface NotificationCenterProps {
+  onNavigate?: (tab: string) => void;
+}
 
 interface Notification {
   id: string;
-  type: 'achievement' | 'reminder' | 'study' | 'system';
   title: string;
   message: string;
-  timestamp: Date;
-  read: boolean;
-  actionLabel?: string;
-  actionUrl?: string;
-}
-
-interface NotificationCenterProps {
-  onNavigate: (tab: string) => void;
+  type: 'info' | 'success' | 'warning' | 'error';
+  is_read: boolean;
+  created_at: string;
 }
 
 export const NotificationCenter = ({ onNavigate }: NotificationCenterProps) => {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'achievement',
-      title: 'Achievement Unlocked!',
-      message: 'You earned the "Study Streak" achievement for studying 7 days in a row.',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      read: false,
-      actionLabel: 'View Achievement',
-      actionUrl: 'achievements'
-    },
-    {
-      id: '2',
-      type: 'reminder',
-      title: 'Study Reminder',
-      message: 'Time for your scheduled Physics review session.',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-      read: false,
-      actionLabel: 'Start Review',
-      actionUrl: 'flashcards'
-    },
-    {
-      id: '3',
-      type: 'study',
-      title: 'Review Due',
-      message: '15 flashcards are due for review in Mathematics.',
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-      read: true,
-      actionLabel: 'Review Now',
-      actionUrl: 'flashcards'
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchNotifications();
     }
-  ]);
+  }, [user?.user_id]);
 
-  const [isOpen, setIsOpen] = useState(false);
+  const fetchNotifications = async () => {
+    if (!user?.user_id) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false });
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true }))
-    );
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+      
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, is_read: true }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const markAllAsRead = async () => {
+    if (!user?.user_id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.user_id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, is_read: true }))
+      );
+      
+      toast({
+        title: "All notifications marked as read",
+        description: "Your notification list has been updated.",
+      });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
+      
+      setNotifications(prev => 
+        prev.filter(notification => notification.id !== notificationId)
+      );
+      
+      toast({
+        title: "Notification deleted",
+        description: "The notification has been removed.",
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'achievement':
-        return <Trophy className="w-4 h-4 text-yellow-600" />;
-      case 'reminder':
-        return <Clock className="w-4 h-4 text-blue-600" />;
-      case 'study':
-        return <BookOpen className="w-4 h-4 text-green-600" />;
+      case 'success':
+        return <Check className="w-5 h-5 text-green-600" />;
+      case 'warning':
+        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+      case 'error':
+        return <AlertCircle className="w-5 h-5 text-red-600" />;
       default:
-        return <Bell className="w-4 h-4 text-gray-600" />;
+        return <Info className="w-5 h-5 text-blue-600" />;
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor(diff / (1000 * 60));
-
-    if (hours > 0) {
-      return `${hours}h ago`;
-    } else if (minutes > 0) {
-      return `${minutes}m ago`;
-    } else {
-      return 'Just now';
+  const getNotificationBgColor = (type: string) => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-50 border-green-200';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200';
+      case 'error':
+        return 'bg-red-50 border-red-200';
+      default:
+        return 'bg-blue-50 border-blue-200';
     }
   };
+
+  const filteredNotifications = notifications.filter(notification => 
+    filter === 'all' || !notification.is_read
+  );
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2"
-      >
-        <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
-            {unreadCount}
+    <div className="space-y-6 pb-20">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <p className="text-gray-600">Stay updated with your learning progress</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary">
+            {unreadCount} unread
           </Badge>
-        )}
-      </Button>
+          <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
+            <CheckCheck className="w-4 h-4 mr-2" />
+            Mark all read
+          </Button>
+        </div>
+      </div>
 
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <Card className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto z-50 shadow-lg">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">Notifications</h3>
-                {unreadCount > 0 && (
+      <Card className="p-4">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+          >
+            All ({notifications.length})
+          </Button>
+          <Button
+            variant={filter === 'unread' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('unread')}
+          >
+            Unread ({unreadCount})
+          </Button>
+        </div>
+      </Card>
+
+      {filteredNotifications.length > 0 ? (
+        <div className="space-y-3">
+          {filteredNotifications.map((notification) => (
+            <Card 
+              key={notification.id} 
+              className={`p-4 border-l-4 ${getNotificationBgColor(notification.type)} ${
+                !notification.is_read ? 'ring-2 ring-indigo-100' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <div className="flex-shrink-0 mt-1">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-gray-900">{notification.title}</h3>
+                      {!notification.is_read && (
+                        <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                      )}
+                    </div>
+                    <p className="text-gray-700 mt-1">{notification.message}</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(notification.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 ml-4">
+                  {!notification.is_read && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={markAllAsRead}
-                    className="text-xs text-indigo-600 hover:text-indigo-700"
+                    onClick={() => deleteNotification(notification.id)}
                   >
-                    Mark all read
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  <Bell className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm">No notifications</p>
                 </div>
-              ) : (
-                notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 ${
-                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {formatTimestamp(notification.timestamp)}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center space-x-1 ml-2">
-                            {!notification.read && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => markAsRead(notification.id)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Check className="w-3 h-3" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteNotification(notification.id)}
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {notification.actionLabel && notification.actionUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2 h-6 text-xs"
-                            onClick={() => {
-                              onNavigate(notification.actionUrl!);
-                              setIsOpen(false);
-                              markAsRead(notification.id);
-                            }}
-                          >
-                            {notification.actionLabel}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-        </>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="p-8 text-center">
+          <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+          </h3>
+          <p className="text-gray-600">
+            {filter === 'unread' 
+              ? 'All caught up! Check back later for updates.'
+              : 'Notifications about your study progress will appear here.'
+            }
+          </p>
+        </Card>
       )}
     </div>
   );
