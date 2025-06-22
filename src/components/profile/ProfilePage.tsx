@@ -1,88 +1,54 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '../auth/AuthProvider';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '../auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
+  Mail, 
   Calendar, 
-  Clock, 
-  Target, 
-  Trophy, 
   BookOpen, 
-  TrendingUp,
-  Edit,
+  Target, 
+  Trophy,
+  Edit2,
   Save,
-  Loader2
+  X
 } from 'lucide-react';
 
 export const ProfilePage = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    college: user?.college || '',
-    semester: user?.semester || 1,
-    examType: user?.examType || ''
-  });
+  const [editedName, setEditedName] = useState(user?.name || '');
+  const [editedCollege, setEditedCollege] = useState(user?.college || '');
+  const [editedExamType, setEditedExamType] = useState(user?.examType || '');
 
-  if (!user) return null;
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const levelProgress = ((user.experience_points || 0) % 1000) / 1000 * 100;
-
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     if (!user?.user_id) return;
 
-    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('user_profiles')
         .update({
-          name: formData.name,
-          email: formData.email,
-          college: user.userType === 'college' ? formData.college : null,
-          semester: user.userType === 'college' ? formData.semester : null,
-          exam_type: user.userType === 'exam' ? formData.examType : null,
+          name: editedName,
+          college: editedCollege,
+          exam_type: editedExamType,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.user_id);
 
       if (error) throw error;
 
-      // Update local user state
-      updateUser({
-        ...user,
-        name: formData.name,
-        email: formData.email,
-        college: formData.college,
-        semester: formData.semester,
-        examType: formData.examType,
-      });
-
-      setIsEditing(false);
       toast({
         title: "Profile Updated",
-        description: "Your profile has been saved successfully.",
+        description: "Your profile has been updated successfully.",
       });
+      setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -90,214 +56,184 @@ export const ProfilePage = () => {
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(user?.name || '');
+    setEditedCollege(user?.college || '');
+    setEditedExamType(user?.examType || '');
+    setIsEditing(false);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
     <div className="space-y-6 pb-20">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">My Profile</h1>
+        <p className="text-gray-600">Manage your account and study preferences</p>
+      </div>
+
       {/* Profile Header */}
       <Card className="p-6">
-        <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-          <Avatar className="w-24 h-24">
-            <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-              {getInitials(user.name || 'U')}
+        <div className="flex items-center space-x-4 mb-6">
+          <Avatar className="w-20 h-20">
+            <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+              {user?.name ? getInitials(user.name) : 'U'}
             </AvatarFallback>
           </Avatar>
-          
-          <div className="flex-1 text-center md:text-left">
-            {isEditing ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                {user.userType === 'college' && (
-                  <>
-                    <div>
-                      <Label htmlFor="college">College</Label>
-                      <Input
-                        id="college"
-                        value={formData.college}
-                        onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="semester">Semester</Label>
-                      <Input
-                        id="semester"
-                        type="number"
-                        min="1"
-                        max="8"
-                        value={formData.semester}
-                        onChange={(e) => setFormData({ ...formData, semester: parseInt(e.target.value) })}
-                      />
-                    </div>
-                  </>
-                )}
-                {user.userType === 'exam' && (
-                  <div>
-                    <Label htmlFor="examType">Exam Type</Label>
-                    <Input
-                      id="examType"
-                      value={formData.examType}
-                      onChange={(e) => setFormData({ ...formData, examType: e.target.value })}
-                    />
-                  </div>
-                )}
-                <div className="flex space-x-2">
-                  <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{user?.name}</h2>
+                <p className="text-gray-600">{user?.email}</p>
+                <Badge className="mt-2">
+                  {user?.userType === 'college' ? 'College Student' : 'Exam Preparation'}
+                </Badge>
               </div>
-            ) : (
-              <>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h1>
-                <p className="text-gray-600 mb-2">{user.email}</p>
-                
-                <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-4">
-                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                    {user.userType === 'exam' ? 'Exam Preparation' : 'College Student'}
-                  </Badge>
-                  {user.examType && (
-                    <Badge variant="outline">{user.examType}</Badge>
-                  )}
-                  {user.college && (
-                    <Badge variant="outline">{user.college}</Badge>
-                  )}
-                  {user.semester && (
-                    <Badge variant="outline">Semester {user.semester}</Badge>
-                  )}
-                </div>
-                
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
-                  <Edit className="w-4 h-4" />
-                  Edit Profile
-                </Button>
-              </>
-            )}
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center space-x-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+              </Button>
+            </div>
           </div>
         </div>
+
+        {isEditing && (
+          <div className="space-y-4 border-t pt-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Full Name
+              </label>
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            {user?.userType === 'college' && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  College/University
+                </label>
+                <Input
+                  value={editedCollege}
+                  onChange={(e) => setEditedCollege(e.target.value)}
+                  placeholder="Enter your college name"
+                />
+              </div>
+            )}
+
+            {user?.userType === 'exam' && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Exam Type
+                </label>
+                <Input
+                  value={editedExamType}
+                  onChange={(e) => setEditedExamType(e.target.value)}
+                  placeholder="e.g., JEE, NEET, UPSC"
+                />
+              </div>
+            )}
+
+            <div className="flex space-x-2">
+              <Button onClick={handleSaveProfile} className="flex items-center space-x-2">
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </Button>
+              <Button variant="outline" onClick={handleCancelEdit} className="flex items-center space-x-2">
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* Stats Grid */}
+      {/* Study Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mx-auto mb-2">
-            <Trophy className="w-6 h-6 text-indigo-600" />
+          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <BookOpen className="w-5 h-5 text-blue-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{user.current_level || 1}</p>
-          <p className="text-sm text-gray-600">Current Level</p>
+          <div className="text-2xl font-bold text-gray-900">{user?.study_streak || 0}</div>
+          <div className="text-sm text-gray-600">Day Streak</div>
         </Card>
 
         <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-2">
-            <Target className="w-6 h-6 text-purple-600" />
+          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <Target className="w-5 h-5 text-green-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{user.experience_points || 0}</p>
-          <p className="text-sm text-gray-600">Experience Points</p>
+          <div className="text-2xl font-bold text-gray-900">{Math.round(user?.total_study_hours || 0)}h</div>
+          <div className="text-sm text-gray-600">Study Hours</div>
         </Card>
 
         <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-2">
-            <Calendar className="w-6 h-6 text-green-600" />
+          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <Trophy className="w-5 h-5 text-purple-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{user.study_streak || 0}</p>
-          <p className="text-sm text-gray-600">Study Streak</p>
+          <div className="text-2xl font-bold text-gray-900">{user?.current_level || 1}</div>
+          <div className="text-sm text-gray-600">Level</div>
         </Card>
 
         <Card className="p-4 text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-2">
-            <Clock className="w-6 h-6 text-orange-600" />
+          <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <Calendar className="w-5 h-5 text-orange-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{user.total_study_hours || 0}</p>
-          <p className="text-sm text-gray-600">Total Hours</p>
+          <div className="text-2xl font-bold text-gray-900">{user?.experience_points || 0}</div>
+          <div className="text-sm text-gray-600">XP Points</div>
         </Card>
       </div>
 
-      {/* Level Progress */}
+      {/* Account Information */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold">Level Progress</h2>
-          </div>
-          <Badge className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-            Level {user.current_level || 1}
-          </Badge>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>{(user.experience_points || 0) % 1000} XP</span>
-            <span>{Math.floor((user.current_level || 1)) * 1000} XP</span>
-          </div>
-          <Progress value={levelProgress} className="h-3" />
-          <p className="text-sm text-gray-500 text-center">
-            {1000 - ((user.experience_points || 0) % 1000)} XP until next level
-          </p>
-        </div>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card className="p-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <BookOpen className="w-5 h-5 text-indigo-600" />
-          <h2 className="text-lg font-semibold">Recent Activity</h2>
-        </div>
-        
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
         <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Completed Flash Card Review</p>
-              <p className="text-xs text-gray-500">Physics - Wave Optics • 2 hours ago</p>
-            </div>
+          <div className="flex items-center space-x-3">
+            <User className="w-5 h-5 text-gray-400" />
+            <span className="text-gray-600">Name:</span>
+            <span className="font-medium">{user?.name}</span>
           </div>
-          
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Study Session Completed</p>
-              <p className="text-xs text-gray-500">Mathematics - Calculus • 5 hours ago</p>
-            </div>
+          <div className="flex items-center space-x-3">
+            <Mail className="w-5 h-5 text-gray-400" />
+            <span className="text-gray-600">Email:</span>
+            <span className="font-medium">{user?.email}</span>
           </div>
-          
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Achievement Unlocked</p>
-              <p className="text-xs text-gray-500">Study Streak Master • 1 day ago</p>
-            </div>
+          <div className="flex items-center space-x-3">
+            <Target className="w-5 h-5 text-gray-400" />
+            <span className="text-gray-600">Study Mode:</span>
+            <Badge variant="outline">
+              {user?.userType === 'college' ? 'College Student' : 'Exam Preparation'}
+            </Badge>
           </div>
+          {user?.college && (
+            <div className="flex items-center space-x-3">
+              <BookOpen className="w-5 h-5 text-gray-400" />
+              <span className="text-gray-600">College:</span>
+              <span className="font-medium">{user.college}</span>
+            </div>
+          )}
+          {user?.examType && (
+            <div className="flex items-center space-x-3">
+              <Target className="w-5 h-5 text-gray-400" />
+              <span className="text-gray-600">Exam Type:</span>
+              <span className="font-medium">{user.examType}</span>
+            </div>
+          )}
         </div>
       </Card>
     </div>

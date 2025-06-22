@@ -21,7 +21,11 @@ import {
   Loader2
 } from 'lucide-react';
 
-export const DiscoverResources = () => {
+interface DiscoverResourcesProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const DiscoverResources = ({ onNavigate }: DiscoverResourcesProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [skillInput, setSkillInput] = useState('');
@@ -36,7 +40,6 @@ export const DiscoverResources = () => {
       const { error } = await supabase
         .from('user_profiles')
         .update({
-          // Add to existing skills array or create new one
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.user_id);
@@ -62,15 +65,6 @@ export const DiscoverResources = () => {
     if (!projectInput.trim() || !user?.user_id) return;
 
     try {
-      // Create a new project entry or add to existing projects
-      const projectData = {
-        user_id: user.user_id,
-        name: projectInput,
-        status: 'active',
-        created_at: new Date().toISOString(),
-      };
-
-      // Since we don't have a projects table, let's store it in user profile for now
       toast({
         title: "Project Added",
         description: `Added "${projectInput}" to your active projects.`,
@@ -100,7 +94,6 @@ export const DiscoverResources = () => {
 
       if (error) throw error;
 
-      // Parse the response and create resource cards
       const ideas = [
         {
           title: "Portfolio Website",
@@ -149,7 +142,6 @@ export const DiscoverResources = () => {
         <p className="text-gray-600">Find projects, learn new skills, and explore ideas</p>
       </div>
 
-      {/* Add Skills Section */}
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Target className="w-5 h-5 text-indigo-600" />
@@ -169,7 +161,6 @@ export const DiscoverResources = () => {
         </div>
       </Card>
 
-      {/* Add Project Section */}
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Code className="w-5 h-5 text-purple-600" />
@@ -189,7 +180,6 @@ export const DiscoverResources = () => {
         </div>
       </Card>
 
-      {/* Explore Ideas Section */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
@@ -234,7 +224,6 @@ export const DiscoverResources = () => {
         )}
       </Card>
 
-      {/* Resource Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 text-center hover:shadow-md transition-shadow cursor-pointer">
           <Youtube className="w-8 h-8 text-red-600 mx-auto mb-2" />
