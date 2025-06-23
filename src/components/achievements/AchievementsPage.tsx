@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,10 +18,10 @@ import {
 interface Achievement {
   id: string;
   achievement_type: string;
-  title: string;
+  achievement_name: string;
   description?: string;
-  points: number;
-  unlocked_at: string;
+  experience_points: number;
+  earned_at: string;
 }
 
 export const AchievementsPage = () => {
@@ -46,13 +45,13 @@ export const AchievementsPage = () => {
         .from('achievements')
         .select('*')
         .eq('user_id', user.user_id)
-        .order('unlocked_at', { ascending: false });
+        .order('earned_at', { ascending: false });
 
       if (error) throw error;
       
       const achievementsList = data || [];
       setAchievements(achievementsList);
-      setTotalPoints(achievementsList.reduce((sum, achievement) => sum + (achievement.points || 0), 0));
+      setTotalPoints(achievementsList.reduce((sum, achievement) => sum + (achievement.experience_points || 0), 0));
     } catch (error) {
       console.error('Error fetching achievements:', error);
     } finally {
@@ -170,14 +169,14 @@ export const AchievementsPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 truncate">{achievement.title}</h3>
-                      <Badge variant="secondary">+{achievement.points} pts</Badge>
+                      <h3 className="font-semibold text-gray-900 truncate">{achievement.achievement_name}</h3>
+                      <Badge variant="secondary">+{achievement.experience_points} pts</Badge>
                     </div>
                     {achievement.description && (
                       <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
                     )}
                     <p className="text-xs text-gray-500 mt-2">
-                      Unlocked {new Date(achievement.unlocked_at).toLocaleDateString()}
+                      Unlocked {new Date(achievement.earned_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
