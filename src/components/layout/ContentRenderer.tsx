@@ -28,6 +28,8 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
   };
 
   const renderContent = () => {
+    console.log('ContentRenderer: Rendering activeTab:', activeTab);
+    
     switch (activeTab) {
       case 'home':
         return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
@@ -50,6 +52,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
       case 'discover':
         return <DiscoverResources onNavigate={handleNavigate} />;
       default:
+        console.log('ContentRenderer: Unknown tab, rendering default dashboard');
         return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
     }
   };

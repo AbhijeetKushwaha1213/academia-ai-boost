@@ -40,14 +40,13 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
   const mainNavItems = [
     { id: 'home', label: 'Dashboard', icon: Home },
     { id: 'flashcards', label: 'Flashcards', icon: BookOpen },
-    { id: 'ai-chat', label: 'AI Chat', icon: Bot },
+    { id: 'ai', label: 'AI Chat', icon: Bot },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
+    { id: 'achievements', label: 'Achievements', icon: Trophy },
   ];
 
   const secondaryNavItems = [
-    { id: 'ai-generator', label: 'AI Generator', icon: Wand2 },
-    { id: 'achievements', label: 'Achievements', icon: Trophy },
+    { id: 'generate', label: 'AI Generator', icon: Wand2 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

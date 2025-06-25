@@ -78,16 +78,9 @@ export const AppLayout = ({
           onNavigate={handleTabChange}
         />
 
-        {/* Page Content */}
+        {/* Page Content - Removed notification section */}
         <div className="p-4 lg:p-6 pb-20 lg:pb-6">
           <ErrorBoundary>
-            {/* Quick Actions for Home Tab */}
-            {activeTab === 'home' && (
-              <div className="mb-6">
-                <QuickActions onNavigate={handleTabChange} />
-              </div>
-            )}
-            
             <ContentRenderer activeTab={activeTab} onNavigate={handleTabChange} />
           </ErrorBoundary>
         </div>
