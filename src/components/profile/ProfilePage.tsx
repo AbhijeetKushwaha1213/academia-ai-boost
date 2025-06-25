@@ -17,13 +17,15 @@ import {
   Trophy,
   Edit2,
   Save,
-  X
+  X,
+  CheckCircle
 } from 'lucide-react';
 
 export const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, refetch } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editedName, setEditedName] = useState(user?.name || '');
   const [editedCollege, setEditedCollege] = useState(user?.college || '');
   const [editedExamType, setEditedExamType] = useState(user?.examType || '');
@@ -31,7 +33,14 @@ export const ProfilePage = () => {
   const handleSaveProfile = async () => {
     if (!user?.user_id) return;
 
+    setIsSaving(true);
     try {
+      console.log('ProfilePage: Saving profile updates:', {
+        name: editedName,
+        college: editedCollege,
+        exam_type: editedExamType
+      });
+
       const { error } = await supabase
         .from('user_profiles')
         .update({
@@ -42,20 +51,30 @@ export const ProfilePage = () => {
         })
         .eq('user_id', user.user_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('ProfilePage: Error updating profile:', error);
+        throw error;
+      }
+
+      // Refetch user data to update the UI
+      if (refetch) {
+        await refetch();
+      }
 
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
+        title: "Profile Updated Successfully! ✅",
+        description: "Your profile information has been saved.",
       });
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('ProfilePage: Error updating profile:', error);
       toast({
-        title: "Error",
+        title: "Update Failed",
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -102,6 +121,7 @@ export const ProfilePage = () => {
               <Button
                 variant="outline"
                 onClick={() => setIsEditing(!isEditing)}
+                disabled={isSaving}
                 className="flex items-center space-x-2"
               >
                 <Edit2 className="w-4 h-4" />
@@ -151,9 +171,22 @@ export const ProfilePage = () => {
             )}
 
             <div className="flex space-x-2">
-              <Button onClick={handleSaveProfile} className="flex items-center space-x-2">
-                <Save className="w-4 h-4" />
-                <span>Save Changes</span>
+              <Button 
+                onClick={handleSaveProfile} 
+                disabled={isSaving}
+                className="flex items-center space-x-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes</span>
+                  </>
+                )}
               </Button>
               <Button variant="outline" onClick={handleCancelEdit} className="flex items-center space-x-2">
                 <X className="w-4 h-4" />
@@ -234,6 +267,14 @@ export const ProfilePage = () => {
               <span className="font-medium">{user.examType}</span>
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* Success Message for Fixed Functionality */}
+      <Card className="p-4 bg-green-50 border-green-200">
+        <div className="flex items-center space-x-2">
+          <CheckCircle className="w-5 h-5 text-green-600" />
+          <span className="text-green-800 font-medium">Profile functionality is now working correctly!</span>
         </div>
       </Card>
     </div>

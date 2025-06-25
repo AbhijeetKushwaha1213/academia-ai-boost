@@ -4,7 +4,7 @@ import { CollegeDashboard } from '../dashboard/CollegeDashboard';
 import { ExamDashboard } from '../dashboard/ExamDashboard';
 import { FlashcardVault } from '../flashcards/FlashcardVault';
 import { AIChat } from '../chat/AIChat';
-import { AIFlashcardGenerator } from '../ai/AIFlashcardGenerator';
+import { AIStudyMaterialGenerator } from '../ai/AIStudyMaterialGenerator';
 import { StudyCalendar } from '../calendar/StudyCalendar';
 import { ProfilePage } from '../profile/ProfilePage';
 import { SettingsPage } from '../settings/SettingsPage';
@@ -38,7 +38,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
       case 'ai':
         return <AIChat />;
       case 'generate':
-        return <AIFlashcardGenerator />;
+        return <AIStudyMaterialGenerator />;
       case 'calendar':
         return <StudyCalendar />;
       case 'profile':

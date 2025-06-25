@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap } from 'lucide-react';
+import { useAuth } from '../auth/AuthProvider';
+import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap, Plus, Github, Lightbulb } from 'lucide-react';
 
 export const ExamDashboard = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const todaysPlan = [
     { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
@@ -19,16 +21,40 @@ export const ExamDashboard = () => {
   const handleStartNextSession = () => {
     console.log('Starting next study session...');
     toast({
-      title: "Session Started!",
-      description: "Your Chemistry - Organic Reactions session has begun. Good luck!",
+      title: "Session Started! 🚀",
+      description: "Your Chemistry - Organic Reactions session has begun. Focus and give your best!",
     });
   };
 
   const handleViewStudyPlan = () => {
     console.log('Viewing study plan...');
     toast({
-      title: "Study Plan",
-      description: "Opening your personalized study plan for Electromagnetic Induction.",
+      title: "Study Plan Loaded 📚",
+      description: "Your personalized study plan for Electromagnetic Induction is now open.",
+    });
+  };
+
+  const handleAddProject = () => {
+    console.log('Adding new project...');
+    toast({
+      title: "Project Creator 🎯",
+      description: "Ready to add a new project to your portfolio!",
+    });
+  };
+
+  const handleAddSkill = () => {
+    console.log('Adding new skill...');
+    toast({
+      title: "Skill Tracker ⭐",
+      description: "Let's add a new skill to your learning journey!",
+    });
+  };
+
+  const handleExploreIdeas = () => {
+    console.log('Exploring project ideas...');
+    toast({
+      title: "Project Ideas Explorer 💡",
+      description: "Discovering exciting project ideas tailored for you!",
     });
   };
 
@@ -38,7 +64,7 @@ export const ExamDashboard = () => {
       <Card className="p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Good morning, Abhijeet! 🎯</h2>
+            <h2 className="text-2xl font-bold mb-2">Good morning, {user?.name || 'Student'}! 🎯</h2>
             <p className="text-indigo-100">Day 47 of your JEE preparation journey</p>
           </div>
           <div className="text-right">
@@ -111,13 +137,22 @@ export const ExamDashboard = () => {
           ))}
         </div>
 
-        <Button 
-          className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700"
-          onClick={handleStartNextSession}
-        >
-          <Zap className="w-4 h-4 mr-2" />
-          Start Next Session
-        </Button>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={handleStartNextSession}
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Start Next Session
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={handleViewStudyPlan}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            View Study Plan
+          </Button>
+        </div>
       </Card>
 
       {/* Progress Overview */}
@@ -151,7 +186,51 @@ export const ExamDashboard = () => {
         </div>
       </Card>
 
-      {/* AI Suggestion */}
+      {/* Project & Skills Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Projects</h3>
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={handleAddProject}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Project
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={handleExploreIdeas}
+            >
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Explore Project Ideas
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Skills</h3>
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={handleAddSkill}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Skill
+            </Button>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Badge variant="secondary">React</Badge>
+              <Badge variant="secondary">Python</Badge>
+              <Badge variant="secondary">Math</Badge>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* AI Recommendation */}
       <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
         <div className="flex items-start space-x-3">
           <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
