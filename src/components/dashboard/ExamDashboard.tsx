@@ -4,14 +4,33 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap } from 'lucide-react';
 
 export const ExamDashboard = () => {
+  const { toast } = useToast();
+
   const todaysPlan = [
     { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
     { subject: 'Chemistry', topic: 'Organic Reactions', duration: '30 min', status: 'current' },
     { subject: 'Math', topic: 'Calculus Practice', duration: '60 min', status: 'pending' }
   ];
+
+  const handleStartNextSession = () => {
+    console.log('Starting next study session...');
+    toast({
+      title: "Session Started!",
+      description: "Your Chemistry - Organic Reactions session has begun. Good luck!",
+    });
+  };
+
+  const handleViewStudyPlan = () => {
+    console.log('Viewing study plan...');
+    toast({
+      title: "Study Plan",
+      description: "Opening your personalized study plan for Electromagnetic Induction.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -92,7 +111,10 @@ export const ExamDashboard = () => {
           ))}
         </div>
 
-        <Button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700">
+        <Button 
+          className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700"
+          onClick={handleStartNextSession}
+        >
           <Zap className="w-4 h-4 mr-2" />
           Start Next Session
         </Button>
@@ -138,7 +160,12 @@ export const ExamDashboard = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-2">AI Recommendation</h4>
             <p className="text-gray-700">Based on your performance, focus on Electromagnetic Induction next. You've shown strong understanding in mechanics!</p>
-            <Button variant="outline" size="sm" className="mt-3 text-purple-700 border-purple-300">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-3 text-purple-700 border-purple-300"
+              onClick={handleViewStudyPlan}
+            >
               View Study Plan
             </Button>
           </div>

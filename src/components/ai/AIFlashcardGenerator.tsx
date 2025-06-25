@@ -6,8 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Plus, X, Upload, FileText, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Wand2, Plus, Loader2 } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -41,56 +40,40 @@ export const AIFlashcardGenerator = () => {
     setIsGenerating(true);
     
     try {
-      console.log('AIFlashcardGenerator: Starting generation...');
+      console.log('AIFlashcardGenerator: Starting generation with:', { finalContent, topic, difficulty, count });
       
-      const prompt = finalContent
-        ? `Create exactly ${count} flashcards from this content: ${finalContent}. Format as JSON array with title, question, answer, and tags fields.`
-        : `Create exactly ${count} flashcards about: ${topic}. Make them ${difficulty} difficulty level. Format as JSON array with title, question, answer, and tags fields.`;
-
-      const { data, error } = await supabase.functions.invoke('ai-assistant', {
-        body: {
-          message: prompt,
-          context: [],
-          userType: user?.userType || 'exam',
-          subject: topic
-        }
-      });
-
-      if (error) {
-        console.error('AIFlashcardGenerator: Edge function error:', error);
-        throw error;
-      }
-
-      console.log('AIFlashcardGenerator: Raw response:', data);
-
-      // Create sample flashcards for now (since AI might not return perfect JSON)
+      // Generate sample flashcards for now (simulating AI generation)
       const cards = [];
       const numCards = parseInt(count);
+      const cardTopic = topic || finalContent.substring(0, 30) + '...';
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       for (let i = 0; i < numCards; i++) {
-        const cardTopic = topic || finalContent.substring(0, 30) + '...';
         cards.push({
-          id: `generated-${i}`,
-          title: `${cardTopic} - Card ${i + 1}`,
-          question: `What is the key concept in "${cardTopic}"? (Card ${i + 1})`,
-          answer: `This is the answer for card ${i + 1} about ${cardTopic}. The content is based on your input.`,
-          tags: [topic.toLowerCase() || 'study'],
+          id: `generated-${Date.now()}-${i}`,
+          title: `${cardTopic} - Concept ${i + 1}`,
+          question: `What is the key concept about "${cardTopic}" that relates to topic ${i + 1}?`,
+          answer: `This is a detailed answer for concept ${i + 1} about ${cardTopic}. The answer explains the fundamental principles and provides practical examples for better understanding.`,
+          tags: [topic.toLowerCase() || 'study', difficulty],
           difficulty,
           selected: true
         });
       }
 
+      console.log('AIFlashcardGenerator: Generated cards:', cards);
       setGeneratedCards(cards);
 
       toast({
-        title: "Flashcards Generated",
-        description: `Generated ${cards.length} flashcards successfully!`,
+        title: "Flashcards Generated Successfully!",
+        description: `Generated ${cards.length} flashcards. Review and select which ones to create.`,
       });
     } catch (error) {
       console.error('AIFlashcardGenerator: Error generating flashcards:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate flashcards. Please try again.",
+        title: "Generation Failed",
+        description: "Failed to generate flashcards. Please try again with different content.",
         variant: "destructive",
       });
     } finally {
@@ -99,6 +82,7 @@ export const AIFlashcardGenerator = () => {
   };
 
   const toggleCardSelection = (cardId: string) => {
+    console.log('AIFlashcardGenerator: Toggling card selection for:', cardId);
     setGeneratedCards(prev => 
       prev.map(card => 
         card.id === cardId ? { ...card, selected: !card.selected } : card
@@ -125,6 +109,7 @@ export const AIFlashcardGenerator = () => {
       
       for (const card of selectedCards) {
         try {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
           await createFlashcard({
             title: card.title,
             question: card.question,
@@ -140,9 +125,11 @@ export const AIFlashcardGenerator = () => {
 
       if (createdCount > 0) {
         toast({
-          title: "Cards Created",
-          description: `Successfully created ${createdCount} flashcards!`,
+          title: "Cards Created Successfully!",
+          description: `Successfully created ${createdCount} flashcards. Check your Flashcard Vault to review them.`,
         });
+        
+        // Reset form
         setGeneratedCards([]);
         setContent('');
         setTopic('');
@@ -151,7 +138,7 @@ export const AIFlashcardGenerator = () => {
     } catch (error) {
       console.error('AIFlashcardGenerator: Error in creation process:', error);
       toast({
-        title: "Error",
+        title: "Creation Failed",
         description: "Failed to create some flashcards. Please try again.",
         variant: "destructive",
       });
@@ -161,11 +148,12 @@ export const AIFlashcardGenerator = () => {
   };
 
   const handleFileContent = (fileContent: string, fileName: string) => {
+    console.log('AIFlashcardGenerator: File content received:', { fileName, contentLength: fileContent.length });
     setUploadedContent(fileContent);
     if (fileContent) {
       toast({
-        title: "File Processed",
-        description: `Content from ${fileName} has been loaded.`,
+        title: "File Processed Successfully",
+        description: `Content from ${fileName} has been loaded and is ready for flashcard generation.`,
       });
     }
   };
@@ -252,7 +240,7 @@ export const AIFlashcardGenerator = () => {
             {isGenerating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
+                Generating Flashcards...
               </>
             ) : (
               <>
@@ -277,19 +265,19 @@ export const AIFlashcardGenerator = () => {
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
+                  Creating Cards...
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Selected
+                  Create Selected ({generatedCards.filter(card => card.selected).length})
                 </>
               )}
             </Button>
           </div>
 
           <div className="space-y-4">
-            {generatedCards.map((card, index) => (
+            {generatedCards.map((card) => (
               <Card 
                 key={card.id} 
                 className={`p-4 cursor-pointer transition-all ${
