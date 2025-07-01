@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { TopicDetailPage } from './TopicDetailPage';
 
 interface StudyPlanPageProps {
   onBack?: () => void;
@@ -26,6 +26,7 @@ export const StudyPlanPage = ({ onBack }: StudyPlanPageProps) => {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState('today');
+  const [selectedTopic, setSelectedTopic] = useState<{subject: string, topic: string} | null>(null);
 
   const todayPlan = [
     { subject: 'Physics', topic: 'Electromagnetic Induction', status: 'completed', duration: '45m' },
@@ -75,6 +76,20 @@ export const StudyPlanPage = ({ onBack }: StudyPlanPageProps) => {
     });
   };
 
+  const handleTopicClick = (subject: string, topic: string) => {
+    setSelectedTopic({ subject, topic });
+  };
+
+  if (selectedTopic) {
+    return (
+      <TopicDetailPage
+        subject={selectedTopic.subject}
+        topic={selectedTopic.topic}
+        onBack={() => setSelectedTopic(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
@@ -110,7 +125,11 @@ export const StudyPlanPage = ({ onBack }: StudyPlanPageProps) => {
               
               <div className="space-y-3">
                 {todayPlan.map((item, index) => (
-                  <div key={index} className={`flex items-center p-4 rounded-lg border ${getStatusColor(item.status)}`}>
+                  <div 
+                    key={index} 
+                    className={`flex items-center p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${getStatusColor(item.status)}`}
+                    onClick={() => handleTopicClick(item.subject, item.topic)}
+                  >
                     {getStatusIcon(item.status)}
                     <div className="ml-3 flex-1">
                       <h4 className="font-medium">{item.subject} - {item.topic}</h4>

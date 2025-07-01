@@ -3,46 +3,49 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, User, Trash2, BookOpen, Target, Lightbulb, Zap, Loader2 } from 'lucide-react';
-import { useAIAssistant } from '@/hooks/useAIAssistant';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-const quickPrompts = [
-  {
-    icon: Target,
-    text: "What should I study next?",
-    color: "from-blue-500 to-indigo-600"
-  },
-  {
-    icon: BookOpen, 
-    text: "Explain this concept to me",
-    color: "from-green-500 to-teal-600"
-  },
-  {
-    icon: Lightbulb,
-    text: "Give me study tips",
-    color: "from-purple-500 to-pink-600"
-  },
-  {
-    icon: Zap,
-    text: "Create a study plan",
-    color: "from-orange-500 to-red-600"
-  }
-];
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
+}
 
-export const AIChat = () => {
-  const { user } = useAuth();
-  const { messages, sendMessage, clearChat, isLoading } = useAIAssistant();
+interface AIChatProps {
+  context?: string;
+  placeholder?: string;
+  className?: string;
+}
+
+export const AIChat = ({ 
+  context = "study assistant", 
+  placeholder = "Ask me anything about your studies...",
+  className = "" 
+}: AIChatProps) => {
   const { toast } = useToast();
-  const [inputMessage, setInputMessage] = useState('');
-  const [subject, setSubject] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      text: `Hi! I'm your AI ${context}. How can I help you today?`,
+      sender: 'ai',
+      timestamp: new Date()
+    }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
   };
 
   useEffect(() => {
@@ -50,33 +53,60 @@ export const AIChat = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-    
-    try {
-      console.log('AIChat: Sending message:', inputMessage);
-      await sendMessage(inputMessage, subject);
-      setInputMessage('');
-    } catch (error) {
-      console.error('AIChat: Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+    if (!input.trim() || isLoading) return;
 
-  const handleQuickPrompt = async (prompt: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: input.trim(),
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
     try {
-      console.log('AIChat: Sending quick prompt:', prompt);
-      await sendMessage(prompt, subject);
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          message: input.trim(),
+          context: context,
+          conversationHistory: messages.slice(-10) // Send last 10 messages for context
+        }
+      });
+
+      if (error) {
+        console.error('AI Assistant Error:', error);
+        throw error;
+      }
+
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: data.response || "I'm sorry, I couldn't process your request right now.",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      console.error('AIChat: Error sending quick prompt:', error);
+      console.error('Error calling AI assistant:', error);
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
-        title: "Error", 
-        description: "Failed to send message. Please try again.",
+        title: "Connection Error",
+        description: "Unable to reach AI assistant. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,145 +118,81 @@ export const AIChat = () => {
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Bot className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">AI Study Assistant</h2>
-        <p className="text-gray-600">Get personalized help with your studies</p>
-        <Badge className="mt-2 bg-green-100 text-green-800 hover:bg-green-100">
-          {user?.userType === 'exam' ? 'Exam Mode' : 'College Mode'}
-        </Badge>
+    <Card className={`flex flex-col h-full ${className}`}>
+      <div className="p-4 border-b">
+        <h3 className="font-semibold flex items-center">
+          <Bot className="w-5 h-5 mr-2 text-blue-600" />
+          AI {context.charAt(0).toUpperCase() + context.slice(1)}
+        </h3>
       </div>
 
-      {/* Subject Input */}
-      <Card className="p-4">
-        <label className="text-sm font-medium text-gray-700 mb-2 block">
-          Current Subject (Optional)
-        </label>
-        <Input
-          placeholder="e.g., Physics, Mathematics, History..."
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-        />
-      </Card>
-
-      {/* Quick Prompts */}
-      {messages.length === 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          {quickPrompts.map((prompt, index) => (
-            <Card 
-              key={index} 
-              className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 transform hover:-translate-y-1"
-              onClick={() => handleQuickPrompt(prompt.text)}
+      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`w-8 h-8 bg-gradient-to-br ${prompt.color} rounded-lg flex items-center justify-center mb-2`}>
-                <prompt.icon className="w-4 h-4 text-white" />
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}
+              >
+                <div className="flex items-start space-x-2">
+                  {message.sender === 'ai' && (
+                    <Bot className="w-4 h-4 mt-0.5 text-blue-600" />
+                  )}
+                  {message.sender === 'user' && (
+                    <User className="w-4 h-4 mt-0.5 text-white" />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                    <p className={`text-xs mt-1 ${
+                      message.sender === 'user' ? 'text-blue-200' : 'text-gray-500'
+                    }`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm font-medium text-gray-900">{prompt.text}</p>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Chat Messages */}
-      {messages.length > 0 && (
-        <Card className="flex flex-col h-96">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="font-semibold text-gray-900">Chat History</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearChat}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-          </div>
-          
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex max-w-xs lg:max-w-md ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      message.role === 'user' 
-                        ? 'bg-indigo-600' 
-                        : 'bg-gradient-to-br from-indigo-600 to-purple-600'
-                    }`}>
-                      {message.role === 'user' ? (
-                        <User className="w-4 h-4 text-white" />
-                      ) : (
-                        <Bot className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-                    <div className={`px-4 py-3 rounded-2xl ${
-                      message.role === 'user'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    }`}>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.role === 'user' ? 'text-indigo-200' : 'text-gray-500'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="bg-gray-100 px-4 py-3 rounded-2xl">
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm text-gray-600">AI is thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-            <div ref={messagesEndRef} />
-          </ScrollArea>
-        </Card>
-      )}
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-[80%]">
+                <div className="flex items-center space-x-2">
+                  <Bot className="w-4 h-4 text-blue-600" />
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <span className="text-sm">Thinking...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
 
-      {/* Message Input */}
-      <Card className="p-4">
+      <div className="p-4 border-t">
         <div className="flex space-x-2">
           <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your studies..."
+            placeholder={placeholder}
             disabled={isLoading}
             className="flex-1"
           />
           <Button 
-            onClick={handleSendMessage}
-            disabled={isLoading || !inputMessage.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={handleSendMessage} 
+            disabled={!input.trim() || isLoading}
+            size="sm"
           >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            <Send className="w-4 h-4" />
           </Button>
         </div>
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 };

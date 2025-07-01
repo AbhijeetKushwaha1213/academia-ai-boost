@@ -23,7 +23,9 @@ export const SettingsPage = () => {
   const [college, setCollege] = useState(user?.college || '');
   const [semester, setSemester] = useState<number | undefined>(user?.semester);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-  const [isDarkModeEnabled, setIsDarkModeEnabled] = useState(false);
+  const [isDarkModeEnabled, setIsDarkModeEnabled] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
 
   useEffect(() => {
     if (user) {
@@ -31,6 +33,16 @@ export const SettingsPage = () => {
       setEmail(user.email || '');
     }
   }, [user]);
+
+  // Apply dark mode to document
+  useEffect(() => {
+    if (isDarkModeEnabled) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', isDarkModeEnabled.toString());
+  }, [isDarkModeEnabled]);
 
   const handleProfileUpdate = async () => {
     setIsSubmitting(true);
@@ -86,8 +98,8 @@ export const SettingsPage = () => {
   return (
     <div className="space-y-6 pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your account and preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-gray-600 dark:text-gray-300">Manage your account and preferences</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
@@ -102,7 +114,7 @@ export const SettingsPage = () => {
 
         <TabsContent value="profile">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Information</h2>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Name</Label>
@@ -134,7 +146,7 @@ export const SettingsPage = () => {
 
         <TabsContent value="study">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Study Preferences</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Study Preferences</h2>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="userType">I am a...</Label>
@@ -204,7 +216,7 @@ export const SettingsPage = () => {
 
         <TabsContent value="notifications">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notification Settings</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="notifications">Enable Notifications</Label>
@@ -214,7 +226,7 @@ export const SettingsPage = () => {
                   onCheckedChange={setIsNotificationsEnabled}
                 />
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Stay updated with study reminders, achievements, and important announcements.
               </p>
             </div>
@@ -223,7 +235,7 @@ export const SettingsPage = () => {
 
         <TabsContent value="privacy">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Privacy & Security</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Privacy & Security</h2>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="changePassword">Change Password</Label>
@@ -252,7 +264,7 @@ export const SettingsPage = () => {
 
         <TabsContent value="appearance">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Appearance</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Appearance</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="darkMode">Dark Mode</Label>
@@ -262,7 +274,7 @@ export const SettingsPage = () => {
                   onCheckedChange={setIsDarkModeEnabled}
                 />
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Toggle between light and dark mode for a comfortable viewing experience.
               </p>
             </div>
