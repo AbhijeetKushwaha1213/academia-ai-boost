@@ -32,6 +32,23 @@ interface StudyMaterial {
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
   created_at: string;
+  tags?: string[];
+}
+
+interface ExtendedFlashcard {
+  id: string;
+  title: string;
+  question: string;
+  answer: string;
+  tags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  mastery_level: number;
+  review_count: number;
+  last_reviewed: string | null;
+  next_review: string;
+  created_at: string;
+  updated_at: string;
+  topic?: string;
 }
 
 export const FlashcardVault = () => {
@@ -69,8 +86,8 @@ export const FlashcardVault = () => {
     if (searchTerm) {
       filtered = filtered.filter(material =>
         material.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.topic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.question?.toLowerCase().includes(searchTerm.toLowerCase())
+        (material.topic && material.topic.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (material.question && material.question.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -79,7 +96,11 @@ export const FlashcardVault = () => {
     }
 
     if (topicFilter !== 'all') {
-      filtered = filtered.filter(material => material.topic === topicFilter || material.tags?.includes(topicFilter));
+      filtered = filtered.filter(material => {
+        if (material.topic === topicFilter) return true;
+        if (material.tags && material.tags.includes(topicFilter)) return true;
+        return false;
+      });
     }
 
     return filtered;
@@ -190,8 +211,8 @@ export const FlashcardVault = () => {
     const topics = new Set<string>();
     
     allMaterials.forEach(material => {
-      if (material.topic) topics.add(material.topic);
-      if (material.tags) {
+      if ('topic' in material && material.topic) topics.add(material.topic);
+      if ('tags' in material && material.tags) {
         material.tags.forEach((tag: string) => topics.add(tag));
       }
     });
@@ -354,15 +375,17 @@ export const FlashcardVault = () => {
       </Tabs>
 
       {/* Dialogs */}
-      <CreateFlashcardDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog} 
-      />
+      <CreateFlashcardDialog>
+        <Button className="hidden">Create</Button>
+      </CreateFlashcardDialog>
       
       {showReview && (
         <FlashcardReview 
           flashcards={getFilteredFlashcards()} 
-          onClose={() => setShowReview(false)} 
+          onUpdateMastery={(id: string, correct: boolean) => {
+            console.log('Update mastery:', id, correct);
+            setShowReview(false);
+          }}
         />
       )}
     </div>

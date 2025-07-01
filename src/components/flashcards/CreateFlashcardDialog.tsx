@@ -11,10 +11,12 @@ import { useFlashcards } from '@/hooks/useFlashcards';
 
 interface CreateFlashcardDialogProps {
   children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const CreateFlashcardDialog = ({ children }: CreateFlashcardDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const CreateFlashcardDialog = ({ children, open, onOpenChange }: CreateFlashcardDialogProps) => {
+  const [isOpen, setIsOpen] = useState(open || false);
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -23,6 +25,13 @@ export const CreateFlashcardDialog = ({ children }: CreateFlashcardDialogProps) 
   const [newTag, setNewTag] = useState('');
 
   const { createFlashcard, isCreating } = useFlashcards();
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setIsOpen(newOpen);
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    }
+  };
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -57,11 +66,11 @@ export const CreateFlashcardDialog = ({ children }: CreateFlashcardDialogProps) 
     setDifficulty('medium');
     setTags([]);
     setNewTag('');
-    setIsOpen(false);
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open !== undefined ? open : isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -157,7 +166,7 @@ export const CreateFlashcardDialog = ({ children }: CreateFlashcardDialogProps) 
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsOpen(false)}
+              onClick={() => handleOpenChange(false)}
             >
               Cancel
             </Button>
