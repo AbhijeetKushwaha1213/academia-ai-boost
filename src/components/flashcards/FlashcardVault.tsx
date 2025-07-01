@@ -243,7 +243,7 @@ export const FlashcardVault = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
                   <h3 className="font-semibold text-sm line-clamp-2">{card.title}</h3>
-                  <Badge className={getDifficultyColor(card.difficulty)}>
+                  <Badge className={getDifficultyColor(card.difficulty)} size="sm">
                     {card.difficulty}
                   </Badge>
                 </div>
@@ -260,12 +260,12 @@ export const FlashcardVault = () => {
                 {card.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {card.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline">
+                      <Badge key={index} variant="outline" size="sm">
                         #{tag}
                       </Badge>
                     ))}
                     {card.tags.length > 3 && (
-                      <Badge variant="outline">
+                      <Badge variant="outline" size="sm">
                         +{card.tags.length - 3}
                       </Badge>
                     )}
