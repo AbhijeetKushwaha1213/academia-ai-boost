@@ -77,6 +77,12 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleUserTypeChange = (value: string) => {
+    if (value === 'exam' || value === 'college') {
+      setSelectedType(value);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <div>
@@ -132,7 +138,7 @@ export const SettingsPage = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="userType">I am a...</Label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedType} onValueChange={handleUserTypeChange}>
                   <SelectTrigger id="userType">
                     <SelectValue placeholder="Select your type" />
                   </SelectTrigger>
