@@ -94,11 +94,11 @@ export const FlashcardVault = () => {
               ← Back to Vault
             </Button>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
-              <Button variant="outline" size="sm" onClick={() => deleteFlashcard(card.id)}>
+              <Button variant="outline" onClick={() => deleteFlashcard(card.id)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
               </Button>
@@ -243,7 +243,7 @@ export const FlashcardVault = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
                   <h3 className="font-semibold text-sm line-clamp-2">{card.title}</h3>
-                  <Badge className={getDifficultyColor(card.difficulty)} size="sm">
+                  <Badge className={getDifficultyColor(card.difficulty)}>
                     {card.difficulty}
                   </Badge>
                 </div>
@@ -260,12 +260,12 @@ export const FlashcardVault = () => {
                 {card.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {card.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline" size="sm">
+                      <Badge key={index} variant="outline">
                         #{tag}
                       </Badge>
                     ))}
                     {card.tags.length > 3 && (
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="outline">
                         +{card.tags.length - 3}
                       </Badge>
                     )}
