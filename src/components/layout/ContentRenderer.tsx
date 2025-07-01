@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CollegeDashboard } from '../dashboard/CollegeDashboard';
 import { ExamDashboard } from '../dashboard/ExamDashboard';
@@ -12,6 +11,9 @@ import { AchievementsPage } from '../achievements/AchievementsPage';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { DiscoverResources } from '../discover/DiscoverResources';
 import { useAuth } from '../auth/AuthProvider';
+
+import { ResourceSpace } from '../resources/ResourceSpace';
+import { MultiLevelPlanner } from '../planner/MultiLevelPlanner';
 
 interface ContentRendererProps {
   activeTab: string;
@@ -40,13 +42,13 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
       case 'generate':
         return <AIStudyMaterialGenerator />;
       case 'calendar':
-        return <StudyCalendar />;
+        return <MultiLevelPlanner />;
       case 'profile':
         return <ProfilePage />;
       case 'settings':
         return <SettingsPage />;
       case 'achievements':
-        return <AchievementsPage />;
+        return <ResourceSpace />;
       case 'notifications':
         return <NotificationCenter onNavigate={handleNavigate} />;
       case 'discover':
