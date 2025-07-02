@@ -956,6 +956,48 @@ export type Database = {
           },
         ]
       }
+      study_materials: {
+        Row: {
+          content: Json
+          created_at: string | null
+          difficulty: string
+          id: string
+          source: string | null
+          tags: string[] | null
+          title: string
+          topic: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          difficulty: string
+          id?: string
+          source?: string | null
+          tags?: string[] | null
+          title: string
+          topic: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          difficulty?: string
+          id?: string
+          source?: string | null
+          tags?: string[] | null
+          title?: string
+          topic?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           correct_answers: number | null

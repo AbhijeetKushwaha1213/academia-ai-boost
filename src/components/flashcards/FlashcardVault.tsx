@@ -5,19 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Search, Play, Edit, Trash2, BookOpen } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, Play, Edit, Trash2, BookOpen, Brain, FileQuestion, GitBranch, FileText } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
+import { useStudyMaterials, MaterialType } from '@/hooks/useStudyMaterials';
 import { CreateFlashcardDialog } from './CreateFlashcardDialog';
 import { FlashcardReview } from './FlashcardReview';
 
 export const FlashcardVault = () => {
   const { flashcards, isLoading, deleteFlashcard, updateFlashcard } = useFlashcards();
+  const { materials, isLoading: materialsLoading, deleteMaterial } = useStudyMaterials();
+  const [activeTab, setActiveTab] = useState<'flashcards' | MaterialType>('flashcards');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showReviewMode, setShowReviewMode] = useState(false);
   const [selectedFlashcard, setSelectedFlashcard] = useState<string | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<any | null>(null);
 
+  // Filter flashcards
   const filteredFlashcards = flashcards.filter((card) => {
     const matchesSearch = card.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          card.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,7 +35,26 @@ export const FlashcardVault = () => {
     return matchesSearch && matchesTags;
   });
 
+  // Filter materials by active tab
+  const filteredMaterials = materials.filter((material) => {
+    if (activeTab === 'flashcards') return false; // Don't show materials in flashcard tab
+    if (material.type !== activeTab) return false;
+    
+    const matchesSearch = material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         material.topic.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
+  });
+
   const allTags = Array.from(new Set(flashcards.flatMap(card => card.tags)));
+
+  const materialIcons = {
+    mindmaps: Brain,
+    quizzes: FileQuestion,
+    diagrams: GitBranch,
+    notes: FileText,
+    flashcards: BookOpen,
+  };
 
   const handleStartReview = () => {
     if (filteredFlashcards.length > 0) {
@@ -150,132 +175,293 @@ export const FlashcardVault = () => {
     }
   }
 
+  // Material detail view
+  if (selectedMaterial) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => setSelectedMaterial(null)}>
+            ← Back to Library
+          </Button>
+          <div className="flex space-x-2">
+            <Button variant="outline">
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            <Button variant="outline" onClick={() => deleteMaterial(selectedMaterial.id)}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        <Card className="p-8">
+          <div className="space-y-6">
+            <div className="flex justify-between items-start">
+              <h1 className="text-2xl font-bold">{selectedMaterial.title}</h1>
+              <div className="flex space-x-2">
+                <Badge className={getDifficultyColor(selectedMaterial.difficulty)}>
+                  {selectedMaterial.difficulty}
+                </Badge>
+                <Badge variant="outline">
+                  {selectedMaterial.type}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Render content based on type */}
+            <div className="space-y-4">
+              {selectedMaterial.type === 'flashcards' && (
+                <>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Question:</h3>
+                    <p className="text-gray-700">{selectedMaterial.content.question}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Answer:</h3>
+                    <p className="text-gray-700">{selectedMaterial.content.answer}</p>
+                  </div>
+                </>
+              )}
+
+              {selectedMaterial.type === 'quizzes' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Question:</h3>
+                  <p className="text-gray-700 mb-4">{selectedMaterial.content.question}</p>
+                  <div className="space-y-2">
+                    {selectedMaterial.content.options?.map((option: string, index: number) => (
+                      <div key={index} className={`p-3 rounded border ${index === selectedMaterial.content.correct_answer ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}>
+                        {option} {index === selectedMaterial.content.correct_answer && '✓'}
+                      </div>
+                    ))}
+                  </div>
+                  {selectedMaterial.content.explanation && (
+                    <div className="mt-4">
+                      <h4 className="font-semibold mb-2">Explanation:</h4>
+                      <p className="text-gray-700">{selectedMaterial.content.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedMaterial.type === 'mindmaps' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Central Topic:</h3>
+                  <p className="text-gray-700 mb-4">{selectedMaterial.content.central_topic}</p>
+                  <h3 className="text-lg font-semibold mb-2">Branches:</h3>
+                  <div className="space-y-3">
+                    {selectedMaterial.content.branches?.map((branch: any, index: number) => (
+                      <div key={index} className="p-3 border rounded">
+                        <h4 className="font-medium">{branch.title}</h4>
+                        <ul className="list-disc list-inside mt-2 text-sm text-gray-600">
+                          {branch.subtopics?.map((subtopic: string, subIndex: number) => (
+                            <li key={subIndex}>{subtopic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedMaterial.type === 'notes' && (
+                <div>
+                  <div className="prose max-w-none">
+                    <p className="text-gray-700 whitespace-pre-wrap">{selectedMaterial.content.content}</p>
+                  </div>
+                  {selectedMaterial.content.key_points && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2">Key Points:</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {selectedMaterial.content.key_points.map((point: string, index: number) => (
+                          <li key={index} className="text-gray-700">{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedMaterial.type === 'diagrams' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Components:</h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    {selectedMaterial.content.components?.map((component: string, index: number) => (
+                      <div key={index} className="p-3 border rounded bg-blue-50">
+                        {component}
+                      </div>
+                    ))}
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Relationships:</h3>
+                  <ul className="list-disc list-inside space-y-1">
+                    {selectedMaterial.content.relationships?.map((rel: string, index: number) => (
+                      <li key={index} className="text-gray-700">{rel}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Flashcard Vault</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Study Library</h1>
           <p className="text-gray-600">
-            {flashcards.length} flashcards • {filteredFlashcards.length} showing
+            {flashcards.length + materials.length} items total
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={handleStartReview} disabled={filteredFlashcards.length === 0}>
-            <Play className="w-4 h-4 mr-2" />
-            Start Review
-          </Button>
-          <CreateFlashcardDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Flashcard
-            </Button>
-          </CreateFlashcardDialog>
+          {activeTab === 'flashcards' && (
+            <>
+              <Button onClick={handleStartReview} disabled={filteredFlashcards.length === 0}>
+                <Play className="w-4 h-4 mr-2" />
+                Start Review
+              </Button>
+              <CreateFlashcardDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Flashcard
+                </Button>
+              </CreateFlashcardDialog>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <Card className="p-4">
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search flashcards..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {allTags.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Filter by Tags:</h4>
-              <div className="flex flex-wrap gap-2">
-                {allTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedTags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      if (selectedTags.includes(tag)) {
-                        setSelectedTags(selectedTags.filter(t => t !== tag));
-                      } else {
-                        setSelectedTags([...selectedTags, tag]);
-                      }
-                    }}
-                  >
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder={`Search ${activeTab}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </Card>
 
-      {/* Flashcards Grid */}
-      {isLoading ? (
-        <div className="text-center py-8">Loading flashcards...</div>
-      ) : filteredFlashcards.length === 0 ? (
-        <Card className="p-8 text-center">
-          <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-semibold mb-2">No flashcards found</h3>
-          <p className="text-gray-600 mb-4">
-            {flashcards.length === 0 
-              ? "Create your first flashcard to get started!"
-              : "Try adjusting your search or filters."}
-          </p>
-          <CreateFlashcardDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Flashcard
-            </Button>
-          </CreateFlashcardDialog>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredFlashcards.map((card) => (
-            <Card 
-              key={card.id} 
-              className="p-4 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleViewFlashcard(card.id)}
-            >
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-sm line-clamp-2">{card.title}</h3>
-                  <Badge className={getDifficultyColor(card.difficulty)}>
-                    {card.difficulty}
-                  </Badge>
-                </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="flashcards" className="flex items-center space-x-2">
+            <BookOpen className="w-4 h-4" />
+            <span>Flashcards</span>
+          </TabsTrigger>
+          <TabsTrigger value="mindmaps" className="flex items-center space-x-2">
+            <Brain className="w-4 h-4" />
+            <span>Mind Maps</span>
+          </TabsTrigger>
+          <TabsTrigger value="quizzes" className="flex items-center space-x-2">
+            <FileQuestion className="w-4 h-4" />
+            <span>Quizzes</span>
+          </TabsTrigger>
+          <TabsTrigger value="diagrams" className="flex items-center space-x-2">
+            <GitBranch className="w-4 h-4" />
+            <span>Diagrams</span>
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="flex items-center space-x-2">
+            <FileText className="w-4 h-4" />
+            <span>Notes</span>
+          </TabsTrigger>
+        </TabsList>
 
-                <p className="text-sm text-gray-600 line-clamp-2">{card.question}</p>
-
-                <div className="flex justify-between items-center text-xs text-gray-500">
-                  <span className={getMasteryColor(card.mastery_level)}>
-                    Mastery: {card.mastery_level}/5
-                  </span>
-                  <span>Reviewed {card.review_count} times</span>
-                </div>
-
-                {card.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {card.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline">
-                        #{tag}
-                      </Badge>
-                    ))}
-                    {card.tags.length > 3 && (
-                      <Badge variant="outline">
-                        +{card.tags.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
+        <TabsContent value="flashcards" className="mt-6">
+          {isLoading ? (
+            <div className="text-center py-8">Loading flashcards...</div>
+          ) : filteredFlashcards.length === 0 ? (
+            <Card className="p-8 text-center">
+              <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold mb-2">No flashcards found</h3>
+              <p className="text-gray-600 mb-4">
+                {flashcards.length === 0 
+                  ? "Create your first flashcard to get started!"
+                  : "Try adjusting your search."}
+              </p>
+              <CreateFlashcardDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Flashcard
+                </Button>
+              </CreateFlashcardDialog>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredFlashcards.map((card) => (
+                <Card 
+                  key={card.id} 
+                  className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleViewFlashcard(card.id)}
+                >
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-sm line-clamp-2">{card.title}</h3>
+                      <Badge className={getDifficultyColor(card.difficulty)}>
+                        {card.difficulty}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2">{card.question}</p>
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span className={getMasteryColor(card.mastery_level)}>
+                        Mastery: {card.mastery_level}/5
+                      </span>
+                      <span>Reviewed {card.review_count} times</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {['mindmaps', 'quizzes', 'diagrams', 'notes'].map((type) => (
+          <TabsContent key={type} value={type} className="mt-6">
+            {materialsLoading ? (
+              <div className="text-center py-8">Loading {type}...</div>
+            ) : filteredMaterials.length === 0 ? (
+              <Card className="p-8 text-center">
+                {React.createElement(materialIcons[type as keyof typeof materialIcons], { 
+                  className: "w-12 h-12 mx-auto mb-4 text-gray-400" 
+                })}
+                <h3 className="text-lg font-semibold mb-2">No {type} found</h3>
+                <p className="text-gray-600 mb-4">
+                  Generate some {type} using the AI Generator to get started!
+                </p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredMaterials.map((material) => (
+                  <Card 
+                    key={material.id} 
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedMaterial(material)}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-semibold text-sm line-clamp-2">{material.title}</h3>
+                        <Badge className={getDifficultyColor(material.difficulty)}>
+                          {material.difficulty}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">{material.topic}</p>
+                      <div className="text-xs text-gray-500">
+                        Created: {new Date(material.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };

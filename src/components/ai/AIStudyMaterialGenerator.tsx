@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useStudyMaterials } from '@/hooks/useStudyMaterials';
 
 type MaterialType = 'flashcards' | 'mindmaps' | 'quizzes' | 'diagrams' | 'notes';
 
@@ -27,6 +28,7 @@ interface GeneratedMaterial {
 export const AIStudyMaterialGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { createMultipleMaterials, isBulkCreating } = useStudyMaterials();
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
@@ -232,50 +234,36 @@ export const AIStudyMaterialGenerator = () => {
       return;
     }
 
-    setIsCreating(true);
-    let savedCount = 0;
-
     try {
       console.log('AIStudyMaterialGenerator: Saving selected materials:', selectedMaterials);
       
-      for (const material of selectedMaterials) {
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-          
-          // Here you would save to your backend/database
-          // For now, we'll store in localStorage as a demo
-          const existingMaterials = JSON.parse(localStorage.getItem('studyMaterials') || '[]');
-          existingMaterials.push(material);
-          localStorage.setItem('studyMaterials', JSON.stringify(existingMaterials));
-          
-          savedCount++;
-        } catch (error) {
-          console.error('AIStudyMaterialGenerator: Error saving material:', error);
-        }
-      }
+      // Convert to the format expected by the database
+      const materialsToSave = selectedMaterials.map(material => ({
+        title: material.title,
+        content: material.content,
+        type: material.type,
+        topic: material.topic,
+        difficulty: material.difficulty,
+        tags: [], // Can be enhanced later
+        source: uploadedFile || content.substring(0, 50) || topic,
+      }));
 
-      if (savedCount > 0) {
-        toast({
-          title: "Materials Saved Successfully! 📚",
-          description: `Successfully saved ${savedCount} ${materialType}. Check your Flashcard Vault to review them.`,
-        });
-        
-        // Reset form
-        setGeneratedMaterials([]);
-        setContent('');
-        setTopic('');
-        setUploadedContent('');
-        setUploadedFile(null);
-      }
+      // Save using the hook
+      createMultipleMaterials(materialsToSave);
+      
+      // Reset form on success (the hook will handle the success toast)
+      setGeneratedMaterials([]);
+      setContent('');
+      setTopic('');
+      setUploadedContent('');
+      setUploadedFile(null);
     } catch (error) {
       console.error('AIStudyMaterialGenerator: Error in saving process:', error);
       toast({
         title: "Save Failed",
-        description: "Failed to save some materials. Please try again.",
+        description: "Failed to save study materials. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -512,10 +500,10 @@ export const AIStudyMaterialGenerator = () => {
             <h3 className="text-lg font-semibold text-gray-900">Generated {materialType.charAt(0).toUpperCase() + materialType.slice(1)}</h3>
             <Button 
               onClick={saveSelectedMaterials}
-              disabled={isCreating || !generatedMaterials.some(material => material.selected)}
+              disabled={isBulkCreating || !generatedMaterials.some(material => material.selected)}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isCreating ? (
+              {isBulkCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...

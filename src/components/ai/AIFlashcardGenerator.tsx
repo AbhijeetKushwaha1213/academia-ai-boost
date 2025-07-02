@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Wand2, Plus, Loader2 } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
+import { useStudyMaterials } from '@/hooks/useStudyMaterials';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileUploadComponent } from './FileUploadComponent';
@@ -15,6 +16,7 @@ import { FileUploadComponent } from './FileUploadComponent';
 export const AIFlashcardGenerator = () => {
   const { user } = useAuth();
   const { createFlashcard } = useFlashcards();
+  const { createMaterial } = useStudyMaterials();
   const { toast } = useToast();
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -109,7 +111,7 @@ export const AIFlashcardGenerator = () => {
       
       for (const card of selectedCards) {
         try {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+          // Save as both flashcard and study material
           await createFlashcard({
             title: card.title,
             question: card.question,
@@ -117,6 +119,17 @@ export const AIFlashcardGenerator = () => {
             difficulty: card.difficulty,
             tags: Array.isArray(card.tags) ? card.tags : [card.tags].filter(Boolean)
           });
+          
+          await createMaterial({
+            title: card.title,
+            content: { question: card.question, answer: card.answer },
+            type: 'flashcards',
+            topic: topic || card.title,
+            difficulty: card.difficulty,
+            tags: Array.isArray(card.tags) ? card.tags : [card.tags].filter(Boolean),
+            source: 'AI Generator'
+          });
+          
           createdCount++;
         } catch (error) {
           console.error('AIFlashcardGenerator: Error creating card:', error);
