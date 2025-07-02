@@ -8,10 +8,10 @@ import {
   Home, 
   BookOpen, 
   Bot, 
-  Calendar, 
   TrendingUp, 
   Wand2, 
   Trophy, 
+  FolderOpen,
   Settings,
   User,
   LogOut
@@ -41,8 +41,8 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
     { id: 'home', label: 'Dashboard', icon: Home },
     { id: 'flashcards', label: 'Flashcards', icon: BookOpen },
     { id: 'ai', label: 'AI Chat', icon: Bot },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'achievements', label: 'Achievements', icon: Trophy },
+    { id: 'resources', label: 'Resources', icon: FolderOpen },
   ];
 
   const secondaryNavItems = [

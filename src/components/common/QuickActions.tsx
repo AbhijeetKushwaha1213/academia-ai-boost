@@ -39,11 +39,11 @@ export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
       onClick: () => onNavigate('flashcards')
     },
     {
-      id: 'schedule-study',
-      label: 'Schedule Study',
+      id: 'view-achievements',
+      label: 'View Progress',
       icon: Calendar,
       color: 'bg-orange-500 hover:bg-orange-600',
-      onClick: () => onNavigate('calendar')
+      onClick: () => onNavigate('achievements')
     }
   ];
 

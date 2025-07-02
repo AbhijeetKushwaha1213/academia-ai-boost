@@ -4,16 +4,14 @@ import { ExamDashboard } from '../dashboard/ExamDashboard';
 import { FlashcardVault } from '../flashcards/FlashcardVault';
 import { AIChat } from '../chat/AIChat';
 import { AIStudyMaterialGenerator } from '../ai/AIStudyMaterialGenerator';
-import { StudyCalendar } from '../calendar/StudyCalendar';
 import { ProfilePage } from '../profile/ProfilePage';
 import { SettingsPage } from '../settings/SettingsPage';
-import { AchievementsPage } from '../achievements/AchievementsPage';
+import { NewAchievementsPage } from '../achievements/NewAchievementsPage';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { DiscoverResources } from '../discover/DiscoverResources';
 import { useAuth } from '../auth/AuthProvider';
 
 import { ResourceSpace } from '../resources/ResourceSpace';
-import { MultiLevelPlanner } from '../planner/MultiLevelPlanner';
 
 interface ContentRendererProps {
   activeTab: string;
@@ -41,13 +39,13 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
         return <AIChat />;
       case 'generate':
         return <AIStudyMaterialGenerator />;
-      case 'calendar':
-        return <MultiLevelPlanner />;
+      case 'achievements':
+        return <NewAchievementsPage />;
       case 'profile':
         return <ProfilePage />;
       case 'settings':
         return <SettingsPage />;
-      case 'achievements':
+      case 'resources':
         return <ResourceSpace />;
       case 'notifications':
         return <NotificationCenter onNavigate={handleNavigate} />;

@@ -35,15 +35,15 @@ export const useKeyboardShortcuts = ({ onNavigate, onQuickAction }: KeyboardShor
             break;
           case '4':
             event.preventDefault();
-            onNavigate('calendar');
+            onNavigate('achievements');
             break;
           case '5':
             event.preventDefault();
-            onNavigate('progress');
+            onNavigate('resources');
             break;
           case 'g':
             event.preventDefault();
-            onNavigate('ai-generator');
+            onNavigate('generate');
             break;
           case 'a':
             event.preventDefault();

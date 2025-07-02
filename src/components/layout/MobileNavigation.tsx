@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, BookOpen, Bot, Wand2, Calendar, Search } from 'lucide-react';
+import { Home, BookOpen, Bot, Wand2, Trophy, FolderOpen } from 'lucide-react';
 
 interface MobileNavigationProps {
   activeTab: string;
@@ -13,8 +13,8 @@ export const MobileNavigation = ({ activeTab, setActiveTab }: MobileNavigationPr
     { id: 'flashcards', icon: BookOpen, label: 'Cards' },
     { id: 'ai', icon: Bot, label: 'AI' },
     { id: 'generate', icon: Wand2, label: 'Generate' },
-    { id: 'discover', icon: Search, label: 'Discover' },
-    { id: 'calendar', icon: Calendar, label: 'Calendar' },
+    { id: 'achievements', icon: Trophy, label: 'Achieve' },
+    { id: 'resources', icon: FolderOpen, label: 'Resources' },
   ];
 
   return (
