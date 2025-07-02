@@ -1227,10 +1227,12 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          branch: string | null
           college: string | null
           created_at: string
           current_level: number | null
           email: string
+          exam_date: string | null
           exam_type: string | null
           experience_points: number | null
           id: string
@@ -1243,10 +1245,12 @@ export type Database = {
           user_type: string
         }
         Insert: {
+          branch?: string | null
           college?: string | null
           created_at?: string
           current_level?: number | null
           email: string
+          exam_date?: string | null
           exam_type?: string | null
           experience_points?: number | null
           id?: string
@@ -1259,10 +1263,12 @@ export type Database = {
           user_type: string
         }
         Update: {
+          branch?: string | null
           college?: string | null
           created_at?: string
           current_level?: number | null
           email?: string
+          exam_date?: string | null
           exam_type?: string | null
           experience_points?: number | null
           id?: string
