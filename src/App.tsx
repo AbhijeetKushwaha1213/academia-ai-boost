@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { MainApp } from "./components/MainApp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -40,12 +41,20 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AuthProvider>
-              <Routes>
-                <Route path="/" element={<MainApp />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
+            <Routes>
+              <Route path="/landing" element={<Landing />} />
+              <Route path="/auth" element={
+                <AuthProvider>
+                  <MainApp />
+                </AuthProvider>
+              } />
+              <Route path="/" element={
+                <AuthProvider>
+                  <MainApp />
+                </AuthProvider>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

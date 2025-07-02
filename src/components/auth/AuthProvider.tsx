@@ -11,7 +11,9 @@ interface UserProfile {
   userType: 'exam' | 'college';
   examType?: string;
   college?: string;
+  branch?: string;
   semester?: number;
+  examDate?: string;
   study_streak: number;
   total_study_hours: number;
   current_level: number;
@@ -62,7 +64,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           userType: userType,
           examType: data.exam_type,
           college: data.college,
+          branch: data.branch,
           semester: data.semester,
+          examDate: data.exam_date,
           study_streak: data.study_streak || 0,
           total_study_hours: data.total_study_hours || 0,
           current_level: data.current_level || 1,
@@ -207,10 +211,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user_type: type,
       };
 
-      if (type === 'exam' && details.examType) {
-        updateData.exam_type = details.examType;
+      if (type === 'exam') {
+        if (details.examType) updateData.exam_type = details.examType;
+        if (details.examDate) updateData.exam_date = details.examDate;
       } else if (type === 'college') {
         if (details.college) updateData.college = details.college;
+        if (details.branch) updateData.branch = details.branch;
         if (details.semester) updateData.semester = details.semester;
       }
 
@@ -234,7 +240,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         userType: type,
         examType: details.examType,
         college: details.college,
+        branch: details.branch,
         semester: details.semester,
+        examDate: details.examDate,
       });
 
       toast({

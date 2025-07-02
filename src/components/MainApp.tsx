@@ -9,6 +9,7 @@ import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export const MainApp = () => {
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
@@ -16,6 +17,8 @@ export const MainApp = () => {
   const { isOnline } = useOfflineSupport();
   const { measureComponentRender } = usePerformanceMonitor();
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   console.log('MainApp render - Auth state:', { 
     isAuthenticated, 
@@ -24,6 +27,13 @@ export const MainApp = () => {
     userType: user?.userType,
     activeTab 
   });
+
+  // Redirect to landing page if user comes to root and is not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && location.pathname === '/') {
+      navigate('/landing');
+    }
+  }, [isLoading, isAuthenticated, location.pathname, navigate]);
 
   // Add keyboard shortcuts
   useKeyboardShortcuts({
@@ -123,6 +133,7 @@ export const MainApp = () => {
         title: "Signed Out",
         description: "You have been successfully signed out.",
       });
+      navigate('/landing');
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
