@@ -11,12 +11,16 @@ import {
   TrendingUp,
   Star,
   Calendar,
-  BookOpen
+  BookOpen,
+  Brain,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export const ProgressSummary = () => {
   const { user } = useAuth();
+  const { analytics, isLoading } = useAnalytics();
 
   const stats = [
     {
@@ -30,7 +34,7 @@ export const ProgressSummary = () => {
     {
       icon: Clock,
       label: 'Total Hours',
-      value: user?.total_study_hours || 0,
+      value: analytics?.totalStudyTime ? Math.floor(analytics.totalStudyTime / 60) : (user?.total_study_hours || 0),
       unit: 'hrs',
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
@@ -69,9 +73,27 @@ export const ProgressSummary = () => {
   const currentXP = user?.experience_points || 0;
   const xpProgress = (currentXP / nextLevelXP) * 100;
 
+  if (isLoading) {
+    return (
+      <div className="grid lg:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid lg:grid-cols-3 gap-6">
-      {/* Stats Overview */}
+      {/* Enhanced Stats Overview */}
       <Card className="p-6 lg:col-span-2">
         <h2 className="text-xl font-semibold mb-4 flex items-center">
           <TrendingUp className="w-5 h-5 mr-2" />
@@ -92,7 +114,7 @@ export const ProgressSummary = () => {
         </div>
 
         {/* XP Progress */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg">
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="font-medium">Level Progress</span>
             <Badge variant="secondary">
@@ -105,6 +127,38 @@ export const ProgressSummary = () => {
             <span>{nextLevelXP - currentXP} XP to next level</span>
           </div>
         </div>
+
+        {/* Performance Insights */}
+        {analytics && (
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
+            <div className="flex items-center mb-2">
+              <Brain className="w-5 h-5 text-green-600 mr-2" />
+              <span className="font-medium">Performance Insights</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Accuracy Rate:</span>
+                <span className="font-semibold ml-2">{analytics.accuracyRate.toFixed(1)}%</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Avg Session:</span>
+                <span className="font-semibold ml-2">{analytics.averageSessionLength.toFixed(0)} min</span>
+              </div>
+            </div>
+            {analytics.improvementTrend !== 0 && (
+              <div className="flex items-center mt-2">
+                {analytics.improvementTrend > 0 ? (
+                  <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
+                ) : (
+                  <TrendingUp className="w-4 h-4 text-red-600 mr-1 rotate-180" />
+                )}
+                <span className="text-sm text-gray-600">
+                  {analytics.improvementTrend > 0 ? 'Improving' : 'Declining'} by {Math.abs(analytics.improvementTrend).toFixed(1)}%
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Weekly Goals */}
@@ -149,6 +203,37 @@ export const ProgressSummary = () => {
           ))}
         </div>
       </Card>
+
+      {/* AI Recommendations */}
+      {analytics && (
+        <Card className="p-6 lg:col-span-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+          <h2 className="text-lg font-semibold mb-4 flex items-center">
+            <Zap className="w-5 h-5 mr-2 text-indigo-600" />
+            AI Recommendations
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="p-4 bg-white rounded-lg">
+              <h3 className="font-medium text-indigo-900 mb-2">Focus Area</h3>
+              <p className="text-sm text-indigo-700">
+                {analytics.subjectBreakdown.length > 0 && 
+                  analytics.subjectBreakdown.sort((a, b) => a.accuracy - b.accuracy)[0]?.accuracy < 70
+                  ? `Spend more time on ${analytics.subjectBreakdown[0].subject} to improve your ${analytics.subjectBreakdown[0].accuracy.toFixed(0)}% accuracy rate.`
+                  : "Great job! Your performance is consistent across all subjects. Consider tackling more challenging material."
+                }
+              </p>
+            </div>
+            <div className="p-4 bg-white rounded-lg">
+              <h3 className="font-medium text-indigo-900 mb-2">Study Schedule</h3>
+              <p className="text-sm text-indigo-700">
+                {analytics.averageSessionLength < 30 
+                  ? "Try extending your study sessions to 30-45 minutes for better retention."
+                  : "Your study session length is optimal. Consider taking short breaks every 25 minutes."
+                }
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
