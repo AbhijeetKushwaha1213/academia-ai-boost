@@ -318,23 +318,25 @@ export const StudySessionPage = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-accent/10 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Modern Header */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <Button variant="ghost" onClick={onBack} className="mb-2">
+            <Button variant="ghost" onClick={onBack} className="mb-3 text-muted-foreground hover:text-foreground">
               ← Back to Dashboard
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">{subject} Study Session</h1>
-            <p className="text-gray-600">{topic}</p>
+            <div className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold mb-1">Welcome to {subject}</h1>
+              <p className="text-xl font-medium text-muted-foreground">{topic} Study Session</p>
+            </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Badge className={`${isBreak ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'} text-lg px-4 py-2`}>
-              {isBreak ? 'Break Time' : 'Active Session'}
+            <Badge className={`${isBreak ? 'bg-orange-500/20 text-orange-700 border-orange-200' : 'bg-primary/20 text-primary border-primary/20'} text-lg px-6 py-2 rounded-full font-medium`}>
+              {isBreak ? '🧘 Break Time' : '🎯 Active Session'}
             </Badge>
             {soundEnabled && (
-              <Button variant="outline" size="sm" onClick={() => setSoundEnabled(false)}>
+              <Button variant="outline" size="sm" onClick={() => setSoundEnabled(false)} className="rounded-full">
                 <Volume2 className="w-4 h-4" />
               </Button>
             )}
@@ -343,60 +345,65 @@ export const StudySessionPage = ({
 
         {/* AI Objective Banner */}
         {showObjective && (
-          <Card className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="mb-8 p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 border-primary/20 rounded-2xl shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Target className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-primary/20 rounded-full">
+                  <Target className="w-6 h-6 text-primary" />
+                </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Session Objective</h3>
-                  <p className="text-blue-700">{sessionObjective}</p>
+                  <h3 className="text-lg font-semibold text-foreground">Session Objective</h3>
+                  <p className="text-muted-foreground font-medium">{sessionObjective}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setShowObjective(false)}>×</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowObjective(false)} className="rounded-full">×</Button>
             </div>
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Session Area */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Enhanced Timer */}
-            <Card className="p-8 text-center">
-              <div className="mb-6">
-                <div className="flex justify-center items-center space-x-4 mb-4">
-                  <Clock className={`w-16 h-16 ${isBreak ? 'text-orange-500' : 'text-indigo-600'}`} />
+          <div className="lg:col-span-2 space-y-8">
+            {/* Modern Timer Card */}
+            <Card className="p-10 text-center bg-gradient-to-br from-card to-muted/30 border-0 shadow-2xl rounded-3xl">
+              <div className="mb-8">
+                <div className="flex justify-center items-center space-x-6 mb-6">
+                  <div className={`p-4 rounded-full ${isBreak ? 'bg-orange-500/20' : 'bg-primary/20'}`}>
+                    <Clock className={`w-20 h-20 ${isBreak ? 'text-orange-600' : 'text-primary'}`} />
+                  </div>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowTimerSettings(!showTimerSettings)}
+                    className="rounded-full border-2"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-5 h-5" />
                   </Button>
                 </div>
                 
-                <div className={`text-6xl font-bold mb-2 ${isBreak ? 'text-orange-600' : 'text-gray-900'}`}>
+                <div className={`text-7xl font-bold mb-4 ${isBreak ? 'text-orange-600' : 'text-foreground'} tracking-tight`}>
                   {formatTime(timeLeft)}
                 </div>
                 
-                <Progress value={progress} className="h-3 mb-4" />
+                <Progress value={progress} className="h-4 mb-6 rounded-full" />
                 
-                <p className="text-gray-600 mb-4">
+                <p className="text-lg text-muted-foreground mb-6 font-medium">
                   {isBreak 
-                    ? 'Break time! Relax and recharge.' 
+                    ? '🧘 Break time! Relax and recharge.' 
                     : isRunning 
-                      ? 'Focus time! Stay concentrated.' 
-                      : 'Ready to start your session?'
+                      ? '🔥 Focus time! Stay concentrated.' 
+                      : '✨ Ready to start your session?'
                   }
                 </p>
 
                 {/* Timer Settings */}
                 {showTimerSettings && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="mb-8 p-6 bg-muted/30 rounded-2xl border border-muted">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Focus Time</label>
+                        <label className="block text-sm font-semibold mb-3 text-foreground">⏱️ Focus Time</label>
                         <Select onValueChange={(value) => handleTimerPreset(parseInt(value))}>
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-xl">
                             <SelectValue placeholder="Select focus time" />
                           </SelectTrigger>
                           <SelectContent>
@@ -408,24 +415,24 @@ export const StudySessionPage = ({
                           </SelectContent>
                         </Select>
                         {customTime && (
-                          <div className="flex mt-2 space-x-2">
+                          <div className="flex mt-3 space-x-2">
                             <Input
                               type="number"
                               value={customTime}
                               onChange={(e) => setCustomTime(parseInt(e.target.value) || 25)}
                               min="1"
                               max="180"
-                              className="w-20"
+                              className="w-24 rounded-xl"
                             />
-                            <Button size="sm" onClick={handleCustomTime}>Set</Button>
+                            <Button size="sm" onClick={handleCustomTime} className="rounded-xl">Set</Button>
                           </div>
                         )}
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium mb-2">Break Time</label>
+                        <label className="block text-sm font-semibold mb-3 text-foreground">☕ Break Time</label>
                         <Select onValueChange={(value) => setBreakTime(parseInt(value))}>
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-xl">
                             <SelectValue placeholder="Select break time" />
                           </SelectTrigger>
                           <SelectContent>
@@ -440,20 +447,20 @@ export const StudySessionPage = ({
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <label className="flex items-center space-x-2">
+                      <label className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={autoMode}
                           onChange={(e) => setAutoMode(e.target.checked)}
-                          className="rounded"
+                          className="rounded-md"
                         />
-                        <span className="text-sm">Auto Pomodoro Cycle</span>
+                        <span className="text-sm font-medium">🔄 Auto Pomodoro Cycle</span>
                       </label>
                       
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">Ambient Sound:</span>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium">🎵 Ambient Sound:</span>
                         <Select value={ambientSound} onValueChange={(value: any) => setAmbientSound(value)}>
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-36 rounded-xl">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -469,41 +476,43 @@ export const StudySessionPage = ({
                 )}
               </div>
 
-              <div className="flex justify-center space-x-4">
+              <div className="flex justify-center space-x-6">
                 {!isRunning ? (
-                  <Button onClick={handleStart} className="bg-green-600 hover:bg-green-700">
-                    <Play className="w-4 h-4 mr-2" />
-                    Start
+                  <Button onClick={handleStart} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-2xl text-lg font-semibold shadow-lg">
+                    <Play className="w-5 h-5 mr-2" />
+                    Start Focus
                   </Button>
                 ) : (
-                  <Button onClick={handlePause} variant="outline">
-                    <Pause className="w-4 h-4 mr-2" />
+                  <Button onClick={handlePause} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2">
+                    <Pause className="w-5 h-5 mr-2" />
                     Pause
                   </Button>
                 )}
                 
-                <Button onClick={handleReset} variant="outline">
-                  <RotateCcw className="w-4 h-4 mr-2" />
+                <Button onClick={handleReset} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2">
+                  <RotateCcw className="w-5 h-5 mr-2" />
                   Reset
                 </Button>
                 
-                <Button onClick={handleStop} variant="outline">
-                  <Square className="w-4 h-4 mr-2" />
+                <Button onClick={handleStop} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2 text-destructive border-destructive hover:bg-destructive hover:text-white">
+                  <Square className="w-5 h-5 mr-2" />
                   End Session
                 </Button>
               </div>
             </Card>
 
-            {/* Enhanced Resources */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">Session Resources</h3>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={handleResourceUpload}>
+            {/* Modern Resources Section */}
+            <Card className="p-8 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  📚 Session Resources
+                </h3>
+                <div className="flex space-x-3">
+                  <Button variant="outline" size="sm" onClick={handleResourceUpload} className="rounded-full border-2 shadow-sm">
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Files
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="rounded-full border-2 shadow-sm">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Link
                   </Button>
@@ -520,12 +529,12 @@ export const StudySessionPage = ({
               />
               
               <Tabs defaultValue="all" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">All ({resources.length})</TabsTrigger>
-                  <TabsTrigger value="pdf">PDFs</TabsTrigger>
-                  <TabsTrigger value="video">Videos</TabsTrigger>
-                  <TabsTrigger value="notes">Notes</TabsTrigger>
-                  <TabsTrigger value="links">Links</TabsTrigger>
+                <TabsList className="mb-6 bg-muted/50 rounded-2xl p-1">
+                  <TabsTrigger value="all" className="rounded-xl font-medium">All ({resources.length})</TabsTrigger>
+                  <TabsTrigger value="pdf" className="rounded-xl font-medium">📄 PDFs</TabsTrigger>
+                  <TabsTrigger value="video" className="rounded-xl font-medium">🎥 Videos</TabsTrigger>
+                  <TabsTrigger value="notes" className="rounded-xl font-medium">📝 Notes</TabsTrigger>
+                  <TabsTrigger value="links" className="rounded-xl font-medium">🔗 Links</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="all">
@@ -535,16 +544,18 @@ export const StudySessionPage = ({
                       return (
                         <div 
                           key={resource.id}
-                          className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer group"
+                          className="flex items-center p-4 border border-muted rounded-2xl hover:shadow-lg hover:border-primary/30 cursor-pointer group transition-all duration-200 bg-background/50"
                           onClick={() => handleResourceOpen(resource)}
                         >
-                          <IconComponent className="w-5 h-5 mr-3 text-gray-600" />
+                          <div className="p-2 bg-primary/10 rounded-xl mr-4">
+                            <IconComponent className="w-5 h-5 text-primary" />
+                          </div>
                           <div className="flex-1">
-                            <span className="text-sm font-medium">{resource.name}</span>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <Badge variant="outline" className="text-xs">{resource.category}</Badge>
+                            <span className="font-semibold text-foreground">{resource.name}</span>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="secondary" className="text-xs font-medium rounded-full">{resource.category}</Badge>
                               {resource.tags.slice(0, 2).map(tag => (
-                                <Badge key={tag} variant="outline" className="text-xs">
+                                <Badge key={tag} variant="outline" className="text-xs rounded-full">
                                   <Tag className="w-3 h-3 mr-1" />
                                   {tag}
                                 </Badge>
@@ -552,10 +563,10 @@ export const StudySessionPage = ({
                             </div>
                           </div>
                           <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="rounded-full">
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="rounded-full">
                               <Download className="w-4 h-4" />
                             </Button>
                           </div>
@@ -567,15 +578,17 @@ export const StudySessionPage = ({
               </Tabs>
             </Card>
 
-            {/* Quick Notes */}
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Session Notes</h3>
+            {/* Modern Notes Section */}
+            <Card className="p-8 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                📝 Session Notes
+              </h3>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <div className="flex space-x-2 mb-2">
+                  <div className="flex space-x-3 mb-4">
                     <Select value={noteType} onValueChange={(value: any) => setNoteType(value)}>
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-48 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -586,28 +599,28 @@ export const StudySessionPage = ({
                     </Select>
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
                     <Textarea
                       value={currentNote}
                       onChange={(e) => setCurrentNote(e.target.value)}
                       placeholder="What did you learn? What was difficult? Important points..."
-                      className="flex-1"
-                      rows={2}
+                      className="flex-1 rounded-xl border-2 resize-none"
+                      rows={3}
                     />
-                    <Button onClick={addNote} disabled={!currentNote.trim()}>
+                    <Button onClick={addNote} disabled={!currentNote.trim()} className="rounded-xl px-6">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
                 
                 {notes.length > 0 && (
-                  <ScrollArea className="h-32">
-                    <div className="space-y-2">
+                  <ScrollArea className="h-40">
+                    <div className="space-y-3">
                       {notes.map((note) => (
-                        <div key={note.id} className={`p-3 rounded-lg border ${getNoteColor(note.type)}`}>
+                        <div key={note.id} className={`p-4 rounded-2xl border shadow-sm ${getNoteColor(note.type)}`}>
                           <div className="flex justify-between items-start">
-                            <p className="text-sm flex-1">{note.content}</p>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <p className="text-sm flex-1 font-medium">{note.content}</p>
+                            <span className="text-xs text-muted-foreground ml-3 font-medium">
                               {note.timestamp.toLocaleTimeString()}
                             </span>
                           </div>
@@ -620,41 +633,44 @@ export const StudySessionPage = ({
             </Card>
           </div>
 
-          {/* Enhanced Side Panel */}
-          <div className="space-y-6">
-            {/* AI Assistant */}
-            <Card className="p-4 h-96">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold flex items-center">
-                  <Brain className="w-5 h-5 mr-2 text-blue-600" />
+          {/* Modern Side Panel */}
+          <div className="space-y-8">
+            {/* Floating AI Assistant */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl h-96">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="text-xl font-bold flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  <div className="p-2 bg-primary/20 rounded-full mr-3">
+                    <Brain className="w-5 h-5 text-primary" />
+                  </div>
                   AI Study Assistant
                 </h4>
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={() => setShowChat(!showChat)}
+                  className="rounded-full"
                 >
-                  {showChat ? 'Hide' : 'Show'}
+                  {showChat ? 'Minimize' : 'Expand'}
                 </Button>
               </div>
               
               {showChat ? (
-                <div className="h-80">
+                <div className="h-72">
                   <AIChat 
                     context={`study assistant for ${subject} - ${topic}`}
                     placeholder={`Ask about ${topic}...`}
-                    className="h-full"
+                    className="h-full rounded-2xl"
                   />
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600 mb-3">Quick suggestions:</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4 font-medium">💡 Quick suggestions:</p>
                   {AI_SUGGESTIONS.map((suggestion, index) => (
                     <Button
                       key={index}
                       variant="outline"
                       size="sm"
-                      className="w-full text-left justify-start text-xs"
+                      className="w-full text-left justify-start text-xs rounded-2xl border-muted hover:border-primary/30 hover:bg-primary/5"
                       onClick={() => setShowChat(true)}
                     >
                       {suggestion}
@@ -664,63 +680,67 @@ export const StudySessionPage = ({
               )}
             </Card>
 
-            {/* Live Session Metrics */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
+            {/* Live Metrics with Bold Numbers */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h4 className="text-xl font-bold mb-6 flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <div className="p-2 bg-green-500/20 rounded-full mr-3">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                </div>
                 Live Metrics
               </h4>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Sessions Today</span>
-                  <span className="font-medium">{sessionsCompleted}/4</span>
+              <div className="space-y-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Sessions Today</span>
+                  <span className="text-2xl font-bold text-foreground">{sessionsCompleted}<span className="text-lg text-muted-foreground">/4</span></span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Focus Time</span>
-                  <span className="font-medium">{Math.floor(totalFocusTime / 60)}h {totalFocusTime % 60}m</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Focus Time</span>
+                  <span className="text-2xl font-bold text-foreground">{Math.floor(totalFocusTime / 60)}h<span className="text-lg text-muted-foreground"> {totalFocusTime % 60}m</span></span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Resources Opened</span>
-                  <span className="font-medium">{resourcesOpened}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Resources Opened</span>
+                  <span className="text-2xl font-bold text-primary">{resourcesOpened}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Topics Covered</span>
-                  <span className="font-medium">{topicsCovered}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Topics Covered</span>
+                  <span className="text-2xl font-bold text-accent">{topicsCovered}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Notes Taken</span>
-                  <span className="font-medium">{notes.length}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Notes Taken</span>
+                  <span className="text-2xl font-bold text-secondary-foreground">{notes.length}</span>
                 </div>
               </div>
             </Card>
 
-            {/* Session Progress */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center">
-                <CheckCircle className="w-5 h-5 mr-2 text-blue-600" />
+            {/* Session Progress with Enhanced Bars */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h4 className="text-xl font-bold mb-6 flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <div className="p-2 bg-blue-500/20 rounded-full mr-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                </div>
                 Today's Goals
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-6">
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Study Sessions</span>
-                    <span>{sessionsCompleted}/4</span>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">🎯 Study Sessions</span>
+                    <span className="font-bold text-foreground">{sessionsCompleted}/4</span>
                   </div>
-                  <Progress value={(sessionsCompleted / 4) * 100} className="h-2" />
+                  <Progress value={(sessionsCompleted / 4) * 100} className="h-3 rounded-full" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Focus Time</span>
-                    <span>{Math.floor(totalFocusTime / 60)}/3h</span>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">⏰ Focus Time</span>
+                    <span className="font-bold text-foreground">{Math.floor(totalFocusTime / 60)}/3h</span>
                   </div>
-                  <Progress value={(totalFocusTime / 180) * 100} className="h-2" />
+                  <Progress value={(totalFocusTime / 180) * 100} className="h-3 rounded-full" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Topics</span>
-                    <span>{topicsCovered}/3</span>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">📚 Topics</span>
+                    <span className="font-bold text-foreground">{topicsCovered}/3</span>
                   </div>
-                  <Progress value={(topicsCovered / 3) * 100} className="h-2" />
+                  <Progress value={(topicsCovered / 3) * 100} className="h-3 rounded-full" />
                 </div>
               </div>
             </Card>
