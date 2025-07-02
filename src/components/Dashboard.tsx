@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Target, Flame, Star, ChevronRight, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-20 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
@@ -148,8 +150,8 @@ export const Dashboard = () => {
                 <Star className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
                 <h4 className="font-semibold text-gray-900 mb-1">Physics Master</h4>
                 <p className="text-sm text-gray-600 mb-4">Completed 100 physics problems!</p>
-                <Button variant="ghost" size="sm" className="text-indigo-600">
-                  View All Badges
+                <Button variant="ghost" size="sm" className="text-indigo-600" onClick={() => navigate('/')}>
+                  Try Live Dashboard
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>

@@ -18,9 +18,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { ProgressSummary } from './ProgressSummary';
+import { useFlashcards } from '@/hooks/useFlashcards';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { CreateFlashcardDialog } from '../flashcards/CreateFlashcardDialog';
+import { useState } from 'react';
 
 export const CollegeDashboard = () => {
   const { user } = useAuth();
+  const { flashcards, isLoading: flashcardsLoading } = useFlashcards();
+  const { analytics, isLoading: analyticsLoading } = useAnalytics();
+  const [showCreateFlashcard, setShowCreateFlashcard] = useState(false);
 
   const quickActions = [
     {
@@ -28,21 +35,24 @@ export const CollegeDashboard = () => {
       title: 'Practice Coding',
       description: 'Solve problems on LeetCode, HackerRank',
       action: 'Start Coding',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-600',
+      onClick: () => window.open('https://leetcode.com', '_blank')
     },
     {
       icon: Github,
       title: 'GitHub Projects',
       description: 'Work on your portfolio projects',
       action: 'View Projects',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-purple-500 to-purple-600',
+      onClick: () => window.open('https://github.com', '_blank')
     },
     {
       icon: BookOpen,
       title: 'Study Materials',
-      description: 'Access your course resources',
+      description: `${flashcards?.length || 0} flashcards available`,
       action: 'Open Materials',
-      color: 'from-green-500 to-green-600'
+      color: 'from-green-500 to-green-600',
+      onClick: () => setShowCreateFlashcard(true)
     },
     {
       icon: Users,
@@ -99,7 +109,7 @@ export const CollegeDashboard = () => {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
-            <Card key={index} className="p-4 hover:shadow-lg transition-shadow cursor-pointer">
+            <Card key={index} className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={action.onClick}>
               <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-3`}>
                 <action.icon className="w-6 h-6 text-white" />
               </div>
@@ -168,6 +178,14 @@ export const CollegeDashboard = () => {
           </Button>
         </Card>
       </div>
+
+      {/* Create Flashcard Dialog */}
+      <CreateFlashcardDialog 
+        open={showCreateFlashcard} 
+        onOpenChange={setShowCreateFlashcard}
+      >
+        <div />
+      </CreateFlashcardDialog>
     </div>
   );
 };

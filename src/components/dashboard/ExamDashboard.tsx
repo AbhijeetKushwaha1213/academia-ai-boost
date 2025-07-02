@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,9 +18,19 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { ProgressSummary } from './ProgressSummary';
+import { useFlashcards } from '@/hooks/useFlashcards';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useStudySessions } from '@/hooks/useStudySessions';
+import { CreateFlashcardDialog } from '../flashcards/CreateFlashcardDialog';
+import { AnalyticsDashboard } from '../analytics/AnalyticsDashboard';
 
 export const ExamDashboard = () => {
   const { user } = useAuth();
+  const { flashcards, isLoading: flashcardsLoading } = useFlashcards();
+  const { analytics, isLoading: analyticsLoading } = useAnalytics();
+  const { studySessions } = useStudySessions();
+  const [showCreateFlashcard, setShowCreateFlashcard] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const examDate = user?.examDate ? new Date(user.examDate) : null;
   const today = new Date();
@@ -30,9 +40,10 @@ export const ExamDashboard = () => {
     {
       icon: Brain,
       title: 'AI Flashcards',
-      description: 'Generate smart flashcards',
+      description: `${flashcards?.length || 0} cards available`,
       action: 'Create Cards',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-purple-500 to-purple-600',
+      onClick: () => setShowCreateFlashcard(true)
     },
     {
       icon: BookOpen,
@@ -53,18 +64,32 @@ export const ExamDashboard = () => {
       title: 'Analytics',
       description: 'View progress insights',
       action: 'See Stats',
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-orange-500 to-orange-600',
+      onClick: () => setShowAnalytics(true)
     }
   ];
 
-  const subjectProgress = [
-    { subject: 'Mathematics', progress: 75, topics: 12, completed: 9 },
-    { subject: 'Physics', progress: 60, topics: 15, completed: 9 },
-    { subject: 'Chemistry', progress: 85, topics: 10, completed: 8 },
-    { subject: 'Biology', progress: 45, topics: 18, completed: 8 }
-  ];
+  // Calculate subject progress based on analytics data
+  const subjectProgress = analytics?.subjectBreakdown?.length > 0 
+    ? analytics.subjectBreakdown.map(subject => ({
+        subject: subject.subject,
+        progress: subject.accuracy,
+        topics: Math.ceil(subject.timeSpent * 2), // Estimate topics based on time
+        completed: Math.ceil(subject.timeSpent * subject.accuracy / 100)
+      }))
+    : [
+        { subject: 'Mathematics', progress: 75, topics: 12, completed: 9 },
+        { subject: 'Physics', progress: 60, topics: 15, completed: 9 },
+        { subject: 'Chemistry', progress: 85, topics: 10, completed: 8 },
+        { subject: 'Biology', progress: 45, topics: 18, completed: 8 }
+      ];
 
-  const todaysPlan = [
+  // Generate today's plan based on recent study sessions
+  const todaysPlan = studySessions?.slice(0, 4).map((session, index) => ({
+    task: `${session.topics_covered?.[0] || 'Study Session'} - ${session.session_type}`,
+    time: new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    status: index === 0 ? 'current' : index < 2 ? 'completed' : 'pending'
+  })) || [
     { task: 'Organic Chemistry - Revision', time: '9:00 AM', status: 'completed' },
     { task: 'Mathematics - Practice Problems', time: '11:00 AM', status: 'current' },
     { task: 'Physics - Mock Test', time: '2:00 PM', status: 'pending' },
@@ -115,7 +140,7 @@ export const ExamDashboard = () => {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
-            <Card key={index} className="p-4 hover:shadow-lg transition-shadow cursor-pointer">
+            <Card key={index} className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={action.onClick}>
               <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-3`}>
                 <action.icon className="w-6 h-6 text-white" />
               </div>
@@ -196,6 +221,31 @@ export const ExamDashboard = () => {
           </Button>
         </Card>
       </div>
+
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Study Analytics</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowAnalytics(false)}>
+                <CheckCircle className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <AnalyticsDashboard />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Flashcard Dialog */}
+      <CreateFlashcardDialog 
+        open={showCreateFlashcard} 
+        onOpenChange={setShowCreateFlashcard}
+      >
+        <div />
+      </CreateFlashcardDialog>
     </div>
   );
 };
