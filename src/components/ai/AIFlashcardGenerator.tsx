@@ -103,14 +103,27 @@ export const AIFlashcardGenerator = () => {
       return;
     }
 
+    // Check authentication before proceeding
+    if (!user?.user_id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save flashcards.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreating(true);
     let createdCount = 0;
+    let errorCount = 0;
 
     try {
-      console.log('AIFlashcardGenerator: Creating selected cards:', selectedCards);
+      console.log('AIFlashcardGenerator: Creating selected cards for user:', user.user_id);
       
       for (const card of selectedCards) {
         try {
+          console.log('Creating flashcard:', card.title);
+          
           // Save as both flashcard and study material
           await createFlashcard({
             title: card.title,
@@ -131,8 +144,10 @@ export const AIFlashcardGenerator = () => {
           });
           
           createdCount++;
+          console.log('Successfully created flashcard:', card.title);
         } catch (error) {
-          console.error('AIFlashcardGenerator: Error creating card:', error);
+          console.error('AIFlashcardGenerator: Error creating card:', card.title, error);
+          errorCount++;
         }
       }
 
