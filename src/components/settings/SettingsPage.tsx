@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '../auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { IntegrationsSettings } from './IntegrationsSettings';
+import { supabase } from '@/integrations/supabase/client';
 
 export const SettingsPage = () => {
   const { user, updateUserType, updateUser } = useAuth();
@@ -45,13 +46,24 @@ export const SettingsPage = () => {
   }, [isDarkModeEnabled]);
 
   const handleProfileUpdate = async () => {
+    if (!user) return;
+    
     setIsSubmitting(true);
     try {
-      // Optimistic update
-      updateUser({ ...user!, name, email });
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          name: name,
+          email: email
+        })
+        .eq('user_id', user.user_id);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      updateUser({ ...user, name, email });
 
       toast({
         title: "Profile Updated",
