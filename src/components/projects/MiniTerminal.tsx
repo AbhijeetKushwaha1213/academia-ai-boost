@@ -33,7 +33,6 @@ export default function MiniTerminal({
             onChange={(e) => onTerminalInputChange(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && onTerminalExecute()}
             className="font-mono text-xs"
-            size="sm"
           />
           <Button onClick={onTerminalExecute} size="sm" className="px-2">
             <Play className="w-3 h-3" />
