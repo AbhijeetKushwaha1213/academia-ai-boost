@@ -247,7 +247,6 @@ export const AIStudyMaterialGenerator = () => {
         tags: [], // Can be enhanced later
         source: uploadedFile || content.substring(0, 50) || topic,
       }));
-
       // Save using the hook
       createMultipleMaterials(materialsToSave);
       
