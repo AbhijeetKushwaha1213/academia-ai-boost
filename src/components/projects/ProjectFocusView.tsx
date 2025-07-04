@@ -2,11 +2,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, Pause, RotateCcw, Code, ExternalLink, Github, Timer, Brain, Send } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, Code, ExternalLink, Github, Timer, Brain, Send, Plus, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AIChat } from "../chat/AIChat";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProjectFocusViewProps {
   projectName?: string;
@@ -20,6 +20,21 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+}
+
+interface Resource {
+  id: number;
+  title: string;
+  url: string;
+  type: 'documentation' | 'tutorial' | 'article' | 'video';
+}
+
+interface LeetCodeProblem {
+  id: number;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  tags: string[];
+  url: string;
 }
 
 export default function ProjectFocusView({ 
@@ -36,6 +51,7 @@ export default function ProjectFocusView({
     "✓ Project running at localhost:3000"
   ]);
   const [terminalInput, setTerminalInput] = useState("");
+  const [codeContent, setCodeContent] = useState("Write or paste your code here... This is a local scratchpad and does not save.");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -45,6 +61,28 @@ export default function ProjectFocusView({
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+  const [resources, setResources] = useState<Resource[]>([
+    { id: 1, title: "React Docs", url: "https://reactjs.org/docs", type: "documentation" },
+    { id: 2, title: "Tailwind CSS Guide", url: "https://tailwindcss.com/docs", type: "documentation" }
+  ]);
+  const [newResource, setNewResource] = useState({ title: "", url: "", type: "documentation" as Resource['type'] });
+
+  const leetcodeProblems: LeetCodeProblem[] = [
+    {
+      id: 1,
+      title: "Two Sum",
+      difficulty: "Easy",
+      tags: ["Array", "Hash Table"],
+      url: "https://leetcode.com/problems/two-sum/"
+    },
+    {
+      id: 20,
+      title: "Valid Parentheses",
+      difficulty: "Easy", 
+      tags: ["Stack", "String"],
+      url: "https://leetcode.com/problems/valid-parentheses/"
+    }
+  ];
 
   // Timer functionality
   useEffect(() => {
@@ -81,6 +119,8 @@ export default function ProjectFocusView({
         newOutput.push("✔️ Git command executed");
       } else if (terminalInput.includes("npm run")) {
         newOutput.push("Running script...", "✔️ Script executed successfully");
+      } else if (terminalInput.includes("npm start")) {
+        newOutput.push("Launching dev server...", "✔️ Project running at localhost:3000");
       } else {
         newOutput.push("Command executed");
       }
@@ -107,7 +147,7 @@ export default function ProjectFocusView({
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I understand you're working on a React Portfolio Website. Let me help you with that!",
+        text: "I understand you're working on a React Portfolio Website. Let me help you with that! Feel free to ask about React concepts, debugging, or best practices.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -115,8 +155,28 @@ export default function ProjectFocusView({
     }, 1000);
   };
 
+  const addResource = () => {
+    if (newResource.title && newResource.url) {
+      setResources(prev => [...prev, { ...newResource, id: Date.now() }]);
+      setNewResource({ title: "", url: "", type: "documentation" });
+    }
+  };
+
+  const removeResource = (id: number) => {
+    setResources(prev => prev.filter(resource => resource.id !== id));
+  };
+
+  const openLeetCodeProblem = (problem: LeetCodeProblem) => {
+    window.open(problem.url, "_blank");
+  };
+
   const openExternalLink = (url: string) => {
     window.open(url, "_blank");
+  };
+
+  const openInVSCode = () => {
+    // This opens VS Code with a file protocol - may require VS Code to be installed
+    window.open("vscode://file/your-project-path", "_blank");
   };
 
   return (
@@ -157,11 +217,11 @@ export default function ProjectFocusView({
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => openExternalLink("https://code.visualstudio.com")}
+                      onClick={openInVSCode}
                       className="border-gray-600 text-gray-300 hover:bg-gray-700"
                     >
                       <Code className="w-4 h-4 mr-2" />
-                      VS Code
+                      Open VS Code
                     </Button>
                     <Button 
                       variant="outline" 
@@ -264,7 +324,7 @@ export default function ProjectFocusView({
                           value={terminalInput}
                           onChange={(e) => setTerminalInput(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && executeCommand()}
-                          className="bg-transparent border-none text-green-400 font-mono focus:ring-0"
+                          className="bg-transparent border-none text-green-400 font-mono focus:ring-0 focus-visible:ring-0"
                           placeholder="Enter command..."
                         />
                       </div>
@@ -272,27 +332,123 @@ export default function ProjectFocusView({
                   </TabsContent>
                   
                   <TabsContent value="resources" className="mt-4">
-                    <div className="text-gray-300 p-4">
-                      <p>Resources content goes here...</p>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-white">Project Resources</h3>
+                      
+                      {/* Add Resource Form */}
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Add resource URL or document name" 
+                          value={newResource.title}
+                          onChange={(e) => setNewResource({...newResource, title: e.target.value})}
+                          className="bg-gray-900 border-gray-600 text-white placeholder-gray-400"
+                        />
+                        <Button onClick={addResource} className="bg-blue-600 hover:bg-blue-700">
+                          Add
+                        </Button>
+                      </div>
+                      
+                      {/* Resources List */}
+                      <div className="space-y-2">
+                        {resources.map(resource => (
+                          <div key={resource.id} className="flex items-center justify-between p-3 bg-gray-900 rounded border border-gray-700">
+                            <div className="flex items-center gap-3">
+                              <div className="px-2 py-1 bg-blue-600 text-white text-xs rounded">
+                                {resource.type}
+                              </div>
+                              <a 
+                                href={resource.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-white hover:text-blue-400 flex items-center gap-1"
+                              >
+                                {resource.title}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                            <Button 
+                              onClick={() => removeResource(resource.id)} 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="editor" className="mt-4">
-                    <div className="bg-gray-900 p-4 rounded h-96">
-                      <p className="text-gray-400 mb-4">Write or paste your code here...</p>
-                      <Button 
-                        variant="outline" 
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Open in VS Code
-                      </Button>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-white">Code Scratchpad</h3>
+                        <Button 
+                          onClick={openInVSCode}
+                          variant="outline" 
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Open in VS Code
+                        </Button>
+                      </div>
+                      <Textarea 
+                        value={codeContent}
+                        onChange={(e) => setCodeContent(e.target.value)}
+                        placeholder="Write or paste your code here... This is a local scratchpad and does not save."
+                        className="bg-gray-900 border-gray-600 text-white placeholder-gray-400 font-mono h-96 resize-none"
+                      />
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="practice" className="mt-4">
-                    <div className="text-gray-300 p-4">
-                      <p>Practice problems and exercises...</p>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-white">Practice Problems</h3>
+                        <Button 
+                          onClick={() => openExternalLink("https://leetcode.com")}
+                          variant="outline" 
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Open LeetCode
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {leetcodeProblems.map(problem => (
+                          <div 
+                            key={problem.id} 
+                            className="p-4 bg-gray-900 rounded border border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors"
+                            onClick={() => openLeetCodeProblem(problem)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium text-white mb-1">{problem.title}</h4>
+                                <p className="text-sm text-gray-400">
+                                  {problem.tags.join(", ")} - {problem.difficulty}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openLeetCodeProblem(problem);
+                                  }}
+                                  size="sm"
+                                  className="bg-orange-600 hover:bg-orange-700"
+                                >
+                                  Practice Now
+                                </Button>
+                                <div className="w-6 h-6 bg-orange-500 rounded text-white text-xs flex items-center justify-center font-bold">
+                                  LC
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -320,7 +476,7 @@ export default function ProjectFocusView({
               </CardContent>
             </Card>
 
-            {/* AI Assistant */}
+            {/* AI Assistant - Replacing Quick Terminal */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -328,10 +484,6 @@ export default function ProjectFocusView({
                   <h3 className="font-medium text-white">AI Assistant</h3>
                 </div>
                 
-                <div className="mb-4">
-                  <p className="text-sm text-gray-400 mb-2">How can I help you focus today?</p>
-                </div>
-
                 <ScrollArea className="h-48 mb-4">
                   <div className="space-y-3">
                     {messages.map((message) => (
@@ -343,7 +495,7 @@ export default function ProjectFocusView({
                             : 'bg-gray-700 text-gray-300 mr-8'
                         }`}
                       >
-                        {message.text}
+                        <div className="whitespace-pre-wrap">{message.text}</div>
                       </div>
                     ))}
                   </div>
