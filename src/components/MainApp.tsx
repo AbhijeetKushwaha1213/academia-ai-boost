@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
-import { UserTypeSelection } from './onboarding/UserTypeSelection';
+import { OnboardingFlow } from './onboarding/OnboardingFlow';
 import { AppLayout } from './layout/AppLayout';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
@@ -113,12 +113,12 @@ export const MainApp = () => {
     );
   }
 
-  // Authenticated but no user type selected
+  // Authenticated but no user type selected - show onboarding flow
   if (!user?.userType) {
-    console.log('MainApp: User authenticated but no userType, showing UserTypeSelection');
+    console.log('MainApp: User authenticated but no userType, showing OnboardingFlow');
     return (
       <ErrorBoundary>
-        <UserTypeSelection />
+        <OnboardingFlow />
       </ErrorBoundary>
     );
   }

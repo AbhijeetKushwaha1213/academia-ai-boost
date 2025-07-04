@@ -209,16 +209,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const updateData: any = {
         user_type: type,
+        name: details.name || user.name,
       };
 
       if (type === 'exam') {
         if (details.examType) updateData.exam_type = details.examType;
         if (details.examDate) updateData.exam_date = details.examDate;
+        if (details.targetYear) updateData.target_year = details.targetYear;
       } else if (type === 'college') {
         if (details.college) updateData.college = details.college;
-        if (details.branch) updateData.branch = details.branch;
+        if (details.course) updateData.branch = details.course;
         if (details.semester) updateData.semester = details.semester;
       }
+
+      // Store additional onboarding data as JSON
+      if (details.subjects) updateData.subjects = details.subjects;
+      if (details.studyPreference) updateData.study_preference = details.studyPreference;
+      if (details.motivation) updateData.motivation = details.motivation;
+      if (details.dailyHours) updateData.daily_hours = details.dailyHours;
+      if (details.reviewModes) updateData.review_modes = details.reviewModes;
 
       const { error } = await supabase
         .from('user_profiles')
@@ -237,10 +246,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update local state
       setUser({
         ...user,
+        name: details.name || user.name,
         userType: type,
         examType: details.examType,
         college: details.college,
-        branch: details.branch,
+        branch: details.course,
         semester: details.semester,
         examDate: details.examDate,
       });
