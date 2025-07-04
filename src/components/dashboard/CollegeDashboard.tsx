@@ -1,12 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Code, Calendar, Users, Trophy, BookOpen, Briefcase, Star, Zap } from 'lucide-react';
+import { Code, Calendar, Users, Trophy, BookOpen, Briefcase, Star, Zap, ArrowRight } from 'lucide-react';
+import ProjectFocusView from '../projects/ProjectFocusView';
 
 export const CollegeDashboard = () => {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'project-focus'>('dashboard');
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+
   const currentProjects = [
     { name: 'React Portfolio Website', progress: 75, type: 'coding', deadline: '2 days' },
     { name: 'Data Structures Assignment', progress: 90, type: 'academic', deadline: '1 week' },
@@ -18,6 +22,37 @@ export const CollegeDashboard = () => {
     { skill: 'Node.js', progress: 40, category: 'Backend' },
     { skill: 'UI/UX Design', progress: 80, category: 'Design' }
   ];
+
+  const handleContinueProject = (project: any) => {
+    setSelectedProject(project);
+    setCurrentView('project-focus');
+  };
+
+  const handleContinueSkill = (skill: any) => {
+    const skillProject = {
+      name: `${skill.skill} Learning`,
+      type: skill.category.toLowerCase(),
+      deadline: 'ongoing'
+    };
+    setSelectedProject(skillProject);
+    setCurrentView('project-focus');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+    setSelectedProject(null);
+  };
+
+  if (currentView === 'project-focus' && selectedProject) {
+    return (
+      <ProjectFocusView
+        projectName={selectedProject.name}
+        projectType={selectedProject.type}
+        deadline={selectedProject.deadline}
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -94,6 +129,14 @@ export const CollegeDashboard = () => {
                   </Badge>
                 </div>
               </div>
+              <Button 
+                onClick={() => handleContinueProject(project)}
+                size="sm" 
+                className="ml-4 bg-indigo-600 hover:bg-indigo-700"
+              >
+                Continue Working
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           ))}
         </div>
@@ -105,15 +148,26 @@ export const CollegeDashboard = () => {
         
         <div className="space-y-4">
           {skillsLearning.map((item, index) => (
-            <div key={index}>
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-900">{item.skill}</span>
-                  <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-900">{item.skill}</span>
+                    <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+                  </div>
+                  <span className="text-sm font-medium">{item.progress}%</span>
                 </div>
-                <span className="text-sm font-medium">{item.progress}%</span>
+                <Progress value={item.progress} className="h-2" />
               </div>
-              <Progress value={item.progress} className="h-2" />
+              <Button 
+                onClick={() => handleContinueSkill(item)}
+                size="sm" 
+                variant="outline"
+                className="ml-4"
+              >
+                Continue Learning
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           ))}
         </div>
