@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,10 +34,7 @@ import {
   Timer,
   TrendingUp,
   Brain,
-  CheckCircle,
-  Code,
-  Github,
-  Linkedin
+  CheckCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AIChat } from '../chat/AIChat';
@@ -82,9 +78,17 @@ const BREAK_PRESETS = [
   { label: 'Custom', value: 0 }
 ];
 
+const AI_SUGGESTIONS = [
+  "Summarize this topic",
+  "Explain SN2 mechanism",
+  "Give me MCQs for Organic Chemistry",
+  "What's the difference between SN1 and SN2?",
+  "Create practice problems for this topic"
+];
+
 export const StudySessionPage = ({ 
-  subject = "React Development", 
-  topic = "Portfolio Website",
+  subject = "Chemistry", 
+  topic = "Organic Reactions",
   onBack 
 }: StudySessionPageProps) => {
   const { toast } = useToast();
@@ -103,10 +107,10 @@ export const StudySessionPage = ({
   // Session states
   const [showChat, setShowChat] = useState(true);
   const [resources, setResources] = useState<Resource[]>([
-    { id: '1', name: 'React Documentation', type: 'link', category: 'Docs', tags: ['react', 'frontend'], url: 'https://react.dev' },
-    { id: '2', name: 'Portfolio Design Tutorial', type: 'video', category: 'Tutorial', tags: ['design', 'portfolio'], url: '#' },
-    { id: '3', name: 'Component Architecture Guide', type: 'pdf', category: 'Guide', tags: ['architecture', 'components'], url: '#' },
-    { id: '4', name: 'Deployment Checklist', type: 'notes', category: 'Notes', tags: ['deployment', 'checklist'], url: '#' },
+    { id: '1', name: 'Organic Chemistry Notes.pdf', type: 'pdf', category: 'Notes', tags: ['chemistry', 'organic'], url: '#' },
+    { id: '2', name: 'SN1 vs SN2 Mechanisms', type: 'video', category: 'Video', tags: ['mechanism', 'reactions'], url: '#' },
+    { id: '3', name: 'Khan Academy - Organic Reactions', type: 'link', category: 'Web Link', tags: ['tutorial', 'online'], url: '#' },
+    { id: '4', name: 'Practice Problems Set 3.pdf', type: 'pdf', category: 'Problem Set', tags: ['practice', 'problems'], url: '#' },
   ]);
   
   // Notes states
@@ -116,7 +120,7 @@ export const StudySessionPage = ({
   
   // Session metrics
   const [sessionStartTime] = useState(new Date());
-  const [totalFocusTime, setTotalFocusTime] = useState(90);
+  const [totalFocusTime, setTotalFocusTime] = useState(90); // minutes
   const [sessionsCompleted, setSessionsCompleted] = useState(2);
   const [resourcesOpened, setResourcesOpened] = useState(3);
   const [topicsCovered, setTopicsCovered] = useState(1);
@@ -125,8 +129,9 @@ export const StudySessionPage = ({
   const [ambientSound, setAmbientSound] = useState<'none' | 'rain' | 'lofi' | 'nature'>('none');
   const [soundEnabled, setSoundEnabled] = useState(false);
   
-  // Session objective
-  const [sessionObjective] = useState(`Build and deploy ${topic} with modern React practices`);
+  // AI objectives
+  const [sessionObjective] = useState(`Complete ${topic} study and solve practice problems`);
+  const [showObjective, setShowObjective] = useState(true);
 
   // Timer effect
   useEffect(() => {
@@ -146,7 +151,7 @@ export const StudySessionPage = ({
         }
         toast({
           title: "Break Complete! 🎯",
-          description: "Time to get back to coding!",
+          description: "Time to get back to studying!",
         });
       } else {
         setSessionsCompleted(prev => prev + 1);
@@ -173,7 +178,7 @@ export const StudySessionPage = ({
   };
 
   const handleTimerPreset = (minutes: number) => {
-    if (minutes === 0) return;
+    if (minutes === 0) return; // Custom option
     setTotalTime(minutes * 60);
     setTimeLeft(minutes * 60);
     setCustomTime(minutes);
@@ -189,7 +194,7 @@ export const StudySessionPage = ({
     setIsRunning(true);
     toast({
       title: `${isBreak ? 'Break' : 'Focus'} Started! 🚀`,
-      description: isBreak ? "Enjoy your break!" : "Focus time! Let's build something amazing!",
+      description: isBreak ? "Enjoy your break!" : "Focus time! You've got this!",
     });
   };
 
@@ -306,293 +311,440 @@ export const StudySessionPage = ({
 
   const getNoteColor = (type: SessionNote['type']) => {
     switch (type) {
-      case 'understanding': return 'bg-green-500/10 border-green-500/20 text-green-300';
-      case 'difficulty': return 'bg-red-500/10 border-red-500/20 text-red-300';
-      case 'important': return 'bg-yellow-500/10 border-yellow-500/20 text-yellow-300';
+      case 'understanding': return 'bg-green-50 border-green-200';
+      case 'difficulty': return 'bg-red-50 border-red-200';
+      case 'important': return 'bg-yellow-50 border-yellow-200';
     }
   };
 
-  const openVSCode = () => {
-    window.open("vscode://file/your-project-path", "_blank");
-  };
-
-  const openGitHub = () => {
-    window.open("https://github.com", "_blank");
-  };
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={onBack}
-              className="text-gray-400 hover:text-white"
-            >
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-accent/10 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Modern Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <Button variant="ghost" onClick={onBack} className="mb-3 text-muted-foreground hover:text-foreground">
               ← Back to Dashboard
             </Button>
-            <h1 className="text-xl font-semibold">DevFocus Dashboard</h1>
+            <div className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold mb-1">Welcome to {subject}</h1>
+              <p className="text-xl font-medium text-muted-foreground">{topic} Study Session</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Settings className="w-4 h-4" />
-            </Button>
+          <div className="flex items-center space-x-3">
+            <Badge className={`${isBreak ? 'bg-orange-500/20 text-orange-700 border-orange-200' : 'bg-primary/20 text-primary border-primary/20'} text-lg px-6 py-2 rounded-full font-medium`}>
+              {isBreak ? '🧘 Break Time' : '🎯 Active Session'}
+            </Badge>
+            {soundEnabled && (
+              <Button variant="outline" size="sm" onClick={() => setSoundEnabled(false)} className="rounded-full">
+                <Volume2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-4 gap-6 p-6">
-        {/* Main Content Area */}
-        <div className="col-span-3 space-y-6">
-          {/* Project Header */}
-          <Card className="bg-gray-800 border-gray-700">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
+        {/* AI Objective Banner */}
+        {showObjective && (
+          <Card className="mb-8 p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 border-primary/20 rounded-2xl shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-primary/20 rounded-full">
+                  <Target className="w-6 h-6 text-primary" />
+                </div>
                 <div>
-                  <h2 className="text-2xl font-semibold text-white mb-1">{topic}</h2>
-                  <p className="text-gray-400">{subject} · Due in 2 days</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {/* Quick Action Buttons */}
-                  <Button onClick={openVSCode} variant="outline" size="sm" className="flex items-center gap-2 bg-blue-600/20 border-blue-500/30 text-blue-300 hover:bg-blue-600/30">
-                    <Code className="w-4 h-4" />
-                    VS Code
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                  <Button onClick={openGitHub} variant="outline" size="sm" className="flex items-center gap-2 bg-gray-600/20 border-gray-500/30 text-gray-300 hover:bg-gray-600/30">
-                    <Github className="w-4 h-4" />
-                    GitHub
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 bg-green-600/20 border-green-500/30 text-green-300 hover:bg-green-600/30">
-                    <ExternalLink className="w-4 h-4" />
-                    LeetCode
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 bg-orange-600/20 border-orange-500/30 text-orange-300 hover:bg-orange-600/30">
-                    <Target className="w-4 h-4" />
-                    HackerRank
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 bg-blue-600/20 border-blue-500/30 text-blue-300 hover:bg-blue-600/30">
-                    <Linkedin className="w-4 h-4" />
-                    LinkedIn
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
+                  <h3 className="text-lg font-semibold text-foreground">Session Objective</h3>
+                  <p className="text-muted-foreground font-medium">{sessionObjective}</p>
                 </div>
               </div>
-
-              {/* Timer Section */}
-              <div className="flex items-center gap-6 mb-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="text-purple-400 w-6 h-6" />
-                  <span className="text-3xl font-bold">{formatTime(timeLeft)}</span>
-                </div>
-                <div className="flex gap-3">
-                  {!isRunning ? (
-                    <Button onClick={handleStart} className="bg-green-600 hover:bg-green-700">
-                      <Play className="w-4 h-4 mr-2" />
-                      Start
-                    </Button>
-                  ) : (
-                    <Button onClick={handlePause} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                      <Pause className="w-4 h-4 mr-2" />
-                      Pause
-                    </Button>
-                  )}
-                  <Button onClick={handleReset} variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset
-                  </Button>
-                </div>
-              </div>
-
-              <Progress value={progress} className="h-2 bg-gray-700" />
+              <Button variant="ghost" size="sm" onClick={() => setShowObjective(false)} className="rounded-full">×</Button>
             </div>
           </Card>
+        )}
 
-          {/* Main Tabs Area */}
-          <Card className="bg-gray-800 border-gray-700">
-            <Tabs defaultValue="terminal" className="w-full">
-              <div className="border-b border-gray-700">
-                <TabsList className="bg-transparent border-0 p-0">
-                  <TabsTrigger 
-                    value="terminal" 
-                    className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 border-0 rounded-none px-6 py-3"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Session Area */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Modern Timer Card */}
+            <Card className="p-10 text-center bg-gradient-to-br from-card to-muted/30 border-0 shadow-2xl rounded-3xl">
+              <div className="mb-8">
+                <div className="flex justify-center items-center space-x-6 mb-6">
+                  <div className={`p-4 rounded-full ${isBreak ? 'bg-orange-500/20' : 'bg-primary/20'}`}>
+                    <Clock className={`w-20 h-20 ${isBreak ? 'text-orange-600' : 'text-primary'}`} />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowTimerSettings(!showTimerSettings)}
+                    className="rounded-full border-2"
                   >
-                    Terminal
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="resources" 
-                    className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 border-0 rounded-none px-6 py-3"
-                  >
-                    Resources
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="editor" 
-                    className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 border-0 rounded-none px-6 py-3"
-                  >
-                    Code Editor
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="practice" 
-                    className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 border-0 rounded-none px-6 py-3"
-                  >
-                    Practice
-                  </TabsTrigger>
-                </TabsList>
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                <div className={`text-7xl font-bold mb-4 ${isBreak ? 'text-orange-600' : 'text-foreground'} tracking-tight`}>
+                  {formatTime(timeLeft)}
+                </div>
+                
+                <Progress value={progress} className="h-4 mb-6 rounded-full" />
+                
+                <p className="text-lg text-muted-foreground mb-6 font-medium">
+                  {isBreak 
+                    ? '🧘 Break time! Relax and recharge.' 
+                    : isRunning 
+                      ? '🔥 Focus time! Stay concentrated.' 
+                      : '✨ Ready to start your session?'
+                  }
+                </p>
+
+                {/* Timer Settings */}
+                {showTimerSettings && (
+                  <div className="mb-8 p-6 bg-muted/30 rounded-2xl border border-muted">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <label className="block text-sm font-semibold mb-3 text-foreground">⏱️ Focus Time</label>
+                        <Select onValueChange={(value) => handleTimerPreset(parseInt(value))}>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Select focus time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIMER_PRESETS.map(preset => (
+                              <SelectItem key={preset.value} value={preset.value.toString()}>
+                                {preset.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {customTime && (
+                          <div className="flex mt-3 space-x-2">
+                            <Input
+                              type="number"
+                              value={customTime}
+                              onChange={(e) => setCustomTime(parseInt(e.target.value) || 25)}
+                              min="1"
+                              max="180"
+                              className="w-24 rounded-xl"
+                            />
+                            <Button size="sm" onClick={handleCustomTime} className="rounded-xl">Set</Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold mb-3 text-foreground">☕ Break Time</label>
+                        <Select onValueChange={(value) => setBreakTime(parseInt(value))}>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Select break time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BREAK_PRESETS.map(preset => (
+                              <SelectItem key={preset.value} value={preset.value.toString()}>
+                                {preset.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={autoMode}
+                          onChange={(e) => setAutoMode(e.target.checked)}
+                          className="rounded-md"
+                        />
+                        <span className="text-sm font-medium">🔄 Auto Pomodoro Cycle</span>
+                      </label>
+                      
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium">🎵 Ambient Sound:</span>
+                        <Select value={ambientSound} onValueChange={(value: any) => setAmbientSound(value)}>
+                          <SelectTrigger className="w-36 rounded-xl">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="rain">Rain</SelectItem>
+                            <SelectItem value="lofi">Lo-fi</SelectItem>
+                            <SelectItem value="nature">Nature</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <TabsContent value="terminal" className="p-6">
-                <div className="bg-black rounded-lg p-4 font-mono text-sm">
-                  <div className="text-green-400 mb-4">
-                    <p>$ npm start</p>
-                    <p className="text-gray-400">Launching dev server...</p>
-                    <p className="text-green-400">✓ Project running at localhost:3000</p>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-green-400 mr-2">$</span>
-                    <input 
-                      type="text"
-                      placeholder="Enter command..."
-                      className="bg-transparent border-none outline-none text-white flex-1"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
+              <div className="flex justify-center space-x-6">
+                {!isRunning ? (
+                  <Button onClick={handleStart} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-2xl text-lg font-semibold shadow-lg">
+                    <Play className="w-5 h-5 mr-2" />
+                    Start Focus
+                  </Button>
+                ) : (
+                  <Button onClick={handlePause} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2">
+                    <Pause className="w-5 h-5 mr-2" />
+                    Pause
+                  </Button>
+                )}
+                
+                <Button onClick={handleReset} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2">
+                  <RotateCcw className="w-5 h-5 mr-2" />
+                  Reset
+                </Button>
+                
+                <Button onClick={handleStop} variant="outline" className="px-8 py-3 rounded-2xl text-lg font-semibold border-2 text-destructive border-destructive hover:bg-destructive hover:text-white">
+                  <Square className="w-5 h-5 mr-2" />
+                  End Session
+                </Button>
+              </div>
+            </Card>
 
-              <TabsContent value="resources" className="p-6">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Project Resources</h3>
-                    <Button variant="outline" size="sm" onClick={handleResourceUpload} className="border-gray-600 text-gray-300">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Files
-                    </Button>
-                  </div>
-                  
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.mp4,.avi,.mov"
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Modern Resources Section */}
+            <Card className="p-8 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  📚 Session Resources
+                </h3>
+                <div className="flex space-x-3">
+                  <Button variant="outline" size="sm" onClick={handleResourceUpload} className="rounded-full border-2 shadow-sm">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Files
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-full border-2 shadow-sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Link
+                  </Button>
+                </div>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.mp4,.avi,.mov"
+              />
+              
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="mb-6 bg-muted/50 rounded-2xl p-1">
+                  <TabsTrigger value="all" className="rounded-xl font-medium">All ({resources.length})</TabsTrigger>
+                  <TabsTrigger value="pdf" className="rounded-xl font-medium">📄 PDFs</TabsTrigger>
+                  <TabsTrigger value="video" className="rounded-xl font-medium">🎥 Videos</TabsTrigger>
+                  <TabsTrigger value="notes" className="rounded-xl font-medium">📝 Notes</TabsTrigger>
+                  <TabsTrigger value="links" className="rounded-xl font-medium">🔗 Links</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {resources.map((resource) => {
                       const IconComponent = getResourceIcon(resource.type);
                       return (
                         <div 
                           key={resource.id}
-                          className="flex items-center p-3 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
+                          className="flex items-center p-4 border border-muted rounded-2xl hover:shadow-lg hover:border-primary/30 cursor-pointer group transition-all duration-200 bg-background/50"
                           onClick={() => handleResourceOpen(resource)}
                         >
-                          <div className="p-2 bg-blue-600/20 rounded-lg mr-3">
-                            <IconComponent className="w-4 h-4 text-blue-400" />
+                          <div className="p-2 bg-primary/10 rounded-xl mr-4">
+                            <IconComponent className="w-5 h-5 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <span className="font-medium text-white block">{resource.name}</span>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-300">{resource.category}</Badge>
+                            <span className="font-semibold text-foreground">{resource.name}</span>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="secondary" className="text-xs font-medium rounded-full">{resource.category}</Badge>
                               {resource.tags.slice(0, 2).map(tag => (
-                                <Badge key={tag} variant="outline" className="text-xs border-gray-600 text-gray-400">
+                                <Badge key={tag} variant="outline" className="text-xs rounded-full">
+                                  <Tag className="w-3 h-3 mr-1" />
                                   {tag}
                                 </Badge>
                               ))}
                             </div>
                           </div>
+                          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="sm" className="rounded-full">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="rounded-full">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
+              </Tabs>
+            </Card>
 
-              <TabsContent value="editor" className="p-6">
-                <div className="bg-gray-900 rounded-lg p-4 min-h-64 border border-gray-700">
-                  <p className="text-gray-500">Code editor integration coming soon...</p>
+            {/* Modern Notes Section */}
+            <Card className="p-8 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                📝 Session Notes
+              </h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex space-x-3 mb-4">
+                    <Select value={noteType} onValueChange={(value: any) => setNoteType(value)}>
+                      <SelectTrigger className="w-48 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="understanding">💡 Understanding</SelectItem>
+                        <SelectItem value="difficulty">❗ Difficulty</SelectItem>
+                        <SelectItem value="important">⭐ Important</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <Textarea
+                      value={currentNote}
+                      onChange={(e) => setCurrentNote(e.target.value)}
+                      placeholder="What did you learn? What was difficult? Important points..."
+                      className="flex-1 rounded-xl border-2 resize-none"
+                      rows={3}
+                    />
+                    <Button onClick={addNote} disabled={!currentNote.trim()} className="rounded-xl px-6">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="practice" className="p-6">
-                <div className="text-center py-12">
-                  <p className="text-gray-500">Practice problems and exercises will appear here</p>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <Card className="bg-gray-800 border-gray-700">
-            <div className="p-4">
-              <h3 className="font-medium mb-3 text-white">Quick Actions</h3>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
-                  View Progress
-                </Button>
-                <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
-                  Submit Update
-                </Button>
-                <Button className="w-full bg-red-600 hover:bg-red-700">
-                  Mark as Complete
-                </Button>
+                
+                {notes.length > 0 && (
+                  <ScrollArea className="h-40">
+                    <div className="space-y-3">
+                      {notes.map((note) => (
+                        <div key={note.id} className={`p-4 rounded-2xl border shadow-sm ${getNoteColor(note.type)}`}>
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm flex-1 font-medium">{note.content}</p>
+                            <span className="text-xs text-muted-foreground ml-3 font-medium">
+                              {note.timestamp.toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
 
-          {/* AI Assistant */}
-          <Card className="bg-gray-800 border-gray-700">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium flex items-center text-white">
-                  <Brain className="w-4 h-4 mr-2 text-blue-400" />
-                  AI Assistant
+          {/* Modern Side Panel */}
+          <div className="space-y-8">
+            {/* Floating AI Assistant */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl h-96">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="text-xl font-bold flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  <div className="p-2 bg-primary/20 rounded-full mr-3">
+                    <Brain className="w-5 h-5 text-primary" />
+                  </div>
+                  AI Study Assistant
                 </h4>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm text-blue-400 mb-2">How can I help you focus today?</p>
-                <div className="bg-gray-700 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gray-300">Hey there! FocusBot here.</p>
-                </div>
-                <div className="bg-gray-700 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gray-300">How can I help you with your project today?</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <input 
-                  type="text"
-                  placeholder="Ask AI anything..."
-                  className="flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white placeholder-gray-400"
-                />
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <MessageCircle className="w-4 h-4" />
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowChat(!showChat)}
+                  className="rounded-full"
+                >
+                  {showChat ? 'Minimize' : 'Expand'}
                 </Button>
               </div>
-            </div>
-          </Card>
+              
+              {showChat ? (
+                <div className="h-72">
+                  <AIChat 
+                    context={`study assistant for ${subject} - ${topic}`}
+                    placeholder={`Ask about ${topic}...`}
+                    className="h-full rounded-2xl"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4 font-medium">💡 Quick suggestions:</p>
+                  {AI_SUGGESTIONS.map((suggestion, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-left justify-start text-xs rounded-2xl border-muted hover:border-primary/30 hover:bg-primary/5"
+                      onClick={() => setShowChat(true)}
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </Card>
 
-          {/* Focus Tips */}
-          <Card className="bg-gray-800 border-gray-700">
-            <div className="p-4">
-              <h4 className="font-medium mb-3 text-white">Focus Tips</h4>
-              <ul className="text-sm space-y-2 text-gray-300">
-                <li>• Break large tasks into smaller steps.</li>
-                <li>• Use the timer for focused Pomodoro sessions.</li>
-                <li>• Push code regularly to track progress.</li>
-                <li>• Stay consistent — 1 hour daily matters.</li>
-              </ul>
-            </div>
-          </Card>
+            {/* Live Metrics with Bold Numbers */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h4 className="text-xl font-bold mb-6 flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <div className="p-2 bg-green-500/20 rounded-full mr-3">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                </div>
+                Live Metrics
+              </h4>
+              <div className="space-y-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Sessions Today</span>
+                  <span className="text-2xl font-bold text-foreground">{sessionsCompleted}<span className="text-lg text-muted-foreground">/4</span></span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Focus Time</span>
+                  <span className="text-2xl font-bold text-foreground">{Math.floor(totalFocusTime / 60)}h<span className="text-lg text-muted-foreground"> {totalFocusTime % 60}m</span></span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Resources Opened</span>
+                  <span className="text-2xl font-bold text-primary">{resourcesOpened}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Topics Covered</span>
+                  <span className="text-2xl font-bold text-accent">{topicsCovered}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Notes Taken</span>
+                  <span className="text-2xl font-bold text-secondary-foreground">{notes.length}</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Session Progress with Enhanced Bars */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20 border-0 shadow-xl rounded-3xl">
+              <h4 className="text-xl font-bold mb-6 flex items-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <div className="p-2 bg-blue-500/20 rounded-full mr-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                </div>
+                Today's Goals
+              </h4>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">🎯 Study Sessions</span>
+                    <span className="font-bold text-foreground">{sessionsCompleted}/4</span>
+                  </div>
+                  <Progress value={(sessionsCompleted / 4) * 100} className="h-3 rounded-full" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">⏰ Focus Time</span>
+                    <span className="font-bold text-foreground">{Math.floor(totalFocusTime / 60)}/3h</span>
+                  </div>
+                  <Progress value={(totalFocusTime / 180) * 100} className="h-3 rounded-full" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="font-medium text-muted-foreground">📚 Topics</span>
+                    <span className="font-bold text-foreground">{topicsCovered}/3</span>
+                  </div>
+                  <Progress value={(topicsCovered / 3) * 100} className="h-3 rounded-full" />
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -165,12 +165,12 @@ export const useStudyMaterials = (type?: MaterialType) => {
         ...material,
         user_id: user.user_id,
       }));
-  console.log('line number 168',user,supabase)
+
       const { data, error } = await supabase
         .from('study_materials')
         .insert(materialsWithUserId)
         .select();
-        console.log('line no 173',data,error)
+
       if (error) {
         console.error('Error creating study materials:', error);
         throw error;
@@ -179,7 +179,6 @@ export const useStudyMaterials = (type?: MaterialType) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['study_materials'] });
-      console.log(data)
       toast({
         title: "Materials Saved Successfully! 🎉",
         description: `Successfully saved ${data.length} study materials to your library.`,
