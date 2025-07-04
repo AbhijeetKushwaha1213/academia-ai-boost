@@ -51,9 +51,9 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
   ];
 
   return (
-    <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:border-r lg:border-gray-200 lg:bg-white lg:z-50">
+    <div className="h-full flex flex-col bg-white border-r border-gray-200 sticky top-0">
       {/* Header */}
-      <div className="flex items-center h-16 px-6 border-b border-gray-200">
+      <div className="flex items-center h-16 px-6 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">S</span>
@@ -68,7 +68,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
       </div>
 
       {/* User Profile */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-10 h-10">
             <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
@@ -99,8 +99,8 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-2">
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
         <div className="space-y-1">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
@@ -110,13 +110,13 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
               <Button
                 key={item.id}
                 variant={isActive ? "secondary" : "ghost"}
-                className={`w-full justify-start h-9 px-3 ${
+                className={`w-full justify-start h-9 px-3 transition-all duration-200 ${
                   isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-gray-700 hover:bg-gray-50'
                 }`}
                 onClick={() => onTabChange(item.id)}
               >
-                <Icon className="w-4 h-4 mr-3" />
-                <span className="text-sm">{item.label}</span>
+                <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                <span className="text-sm truncate">{item.label}</span>
               </Button>
             );
           })}
@@ -135,13 +135,13 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
                 <Button
                   key={item.id}
                   variant={isActive ? "secondary" : "ghost"}
-                  className={`w-full justify-start h-9 px-3 ${
+                  className={`w-full justify-start h-9 px-3 transition-all duration-200 ${
                     isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-gray-700 hover:bg-gray-50'
                   }`}
                   onClick={() => onTabChange(item.id)}
                 >
-                  <Icon className="w-4 h-4 mr-3" />
-                  <span className="text-sm">{item.label}</span>
+                  <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span className="text-sm truncate">{item.label}</span>
                 </Button>
               );
             })}
@@ -150,14 +150,14 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 flex-shrink-0">
         <Button
           variant="ghost"
-          className="w-full justify-start h-9 px-3 text-gray-700 hover:bg-gray-50"
+          className="w-full justify-start h-9 px-3 text-gray-700 hover:bg-gray-50 transition-all duration-200"
           onClick={onSignOut}
         >
-          <LogOut className="w-4 h-4 mr-3" />
-          <span className="text-sm">Sign Out</span>
+          <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
+          <span className="text-sm truncate">Sign Out</span>
         </Button>
       </div>
     </div>

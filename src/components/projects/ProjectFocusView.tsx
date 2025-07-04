@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -182,7 +181,7 @@ export default function ProjectFocusView({
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button 
@@ -213,7 +212,7 @@ export default function ProjectFocusView({
                   </div>
                   
                   {/* External Platform Links */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -221,7 +220,7 @@ export default function ProjectFocusView({
                       className="border-gray-600 text-gray-300 hover:bg-gray-700"
                     >
                       <Code className="w-4 h-4 mr-2" />
-                      Open VS Code
+                      VS Code
                     </Button>
                     <Button 
                       variant="outline" 
@@ -456,8 +455,8 @@ export default function ProjectFocusView({
             </Card>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-6">
+          {/* Right Sidebar - Sticky */}
+          <div className="space-y-6 lg:sticky lg:top-24 lg:h-fit">
             {/* Quick Actions */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
@@ -476,7 +475,7 @@ export default function ProjectFocusView({
               </CardContent>
             </Card>
 
-            {/* AI Assistant - Replacing Quick Terminal */}
+            {/* AI Assistant - Sticky */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
