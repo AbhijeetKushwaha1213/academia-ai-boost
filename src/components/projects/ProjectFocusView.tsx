@@ -36,7 +36,7 @@ export default function ProjectFocusView({
 
   // Timer functionality
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout;
     if (isRunning && timer > 0) {
       interval = setInterval(() => {
         setTimer(timer => timer - 1);
