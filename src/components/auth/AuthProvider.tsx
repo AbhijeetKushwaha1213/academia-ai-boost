@@ -18,6 +18,7 @@ interface UserProfile {
   total_study_hours: number;
   current_level: number;
   experience_points: number;
+  avatar?: string;
 }
 
 interface AuthContextType {
@@ -70,7 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           study_streak: data.study_streak || 0,
           total_study_hours: data.total_study_hours || 0,
           current_level: data.current_level || 1,
-          experience_points: data.experience_points || 0
+          experience_points: data.experience_points || 0,
+          avatar: data.avatar || undefined
         });
       }
     } catch (error) {

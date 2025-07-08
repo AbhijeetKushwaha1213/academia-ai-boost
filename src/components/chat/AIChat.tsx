@@ -186,7 +186,7 @@ export const AIChat = ({
     }
   };
 
-  const chatHeight = isExpanded ? 'h-96' : 'h-64';
+  const chatHeight = isExpanded ? 'h-[80vh]' : 'h-64';
 
   return (
     <Card className={`flex flex-col ${chatHeight} ${className}`}>

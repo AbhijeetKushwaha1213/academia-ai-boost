@@ -84,7 +84,7 @@ export const AppLayout = ({
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="h-full">
+            <div className="h-full overflow-y-auto">
               <DesktopSidebar 
                 activeTab={activeTab} 
                 onTabChange={handleTabChange}

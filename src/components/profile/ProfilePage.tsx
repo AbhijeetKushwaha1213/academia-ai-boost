@@ -20,6 +20,7 @@ import {
   X,
   CheckCircle
 } from 'lucide-react';
+import { AvatarUpload } from './AvatarUpload';
 
 export const ProfilePage = () => {
   const { user, refetch } = useAuth();
@@ -101,14 +102,21 @@ export const ProfilePage = () => {
         <p className="text-gray-600">Manage your account and study preferences</p>
       </div>
 
+      {/* Avatar Upload Section */}
+      <AvatarUpload 
+        currentAvatar={user?.avatar}
+        userName={user?.name}
+        onAvatarUpdate={(url) => {
+          // Refetch user data to update the UI after avatar update
+          if (refetch) {
+            refetch();
+          }
+        }}
+      />
+
       {/* Profile Header */}
       <Card className="p-6">
         <div className="flex items-center space-x-4 mb-6">
-          <Avatar className="w-20 h-20">
-            <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-              {user?.name ? getInitials(user.name) : 'U'}
-            </AvatarFallback>
-          </Avatar>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>

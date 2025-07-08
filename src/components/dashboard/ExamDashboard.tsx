@@ -12,6 +12,7 @@ import { StudyPlanPage } from '../planner/StudyPlanPage';
 import { AddProjectDialog } from '../projects/AddProjectDialog';
 import { AddSkillDialog } from '../skills/AddSkillDialog';
 import { ProjectIdeasExplorer } from '../projects/ProjectIdeasExplorer';
+import { FeatureStatusCard } from '../common/FeatureStatusCard';
 
 export const ExamDashboard = () => {
   const { toast } = useToast();
@@ -236,46 +237,49 @@ export const ExamDashboard = () => {
           </div>
         </Card>
 
-        {/* Project & Skills Section */}
+        {/* Exam-Focused Tools Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Projects</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Mock Tests</h3>
             <div className="space-y-3">
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={handleAddProject}
+                onClick={() => toast({ title: "Mock Test Planner", description: "Create and schedule mock tests for better preparation." })}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add New Project
+                Schedule Mock Test
               </Button>
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={handleExploreIdeas}
+                onClick={() => toast({ title: "Previous Tests", description: "Review your past mock test performances." })}
               >
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Explore Project Ideas
+                <Target className="w-4 h-4 mr-2" />
+                View Test Results
               </Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Skills</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Study Tools</h3>
             <div className="space-y-3">
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={handleAddSkill}
+                onClick={() => toast({ title: "Topic Tracker", description: "Track your syllabus completion progress." })}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Skill
+                <BookOpen className="w-4 h-4 mr-2" />
+                Topic Tracker
               </Button>
-              <div className="flex flex-wrap gap-2 mt-3">
-                <Badge variant="secondary">React</Badge>
-                <Badge variant="secondary">Python</Badge>
-                <Badge variant="secondary">Math</Badge>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => toast({ title: "Revision Log", description: "Plan and track your daily revision targets." })}
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                Daily Revision Log
+              </Button>
             </div>
           </Card>
         </div>
@@ -300,6 +304,9 @@ export const ExamDashboard = () => {
             </div>
           </div>
         </Card>
+
+        {/* Feature Status Card */}
+        <FeatureStatusCard />
       </div>
 
       {/* Dialogs */}
