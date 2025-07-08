@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X, Eye } from 'lucide-react';
+import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X, Eye, Search } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useStudyMaterials } from '@/hooks/useStudyMaterials';
@@ -47,6 +47,8 @@ export const AIStudyMaterialGenerator = () => {
   const [uploadedContent, setUploadedContent] = useState('');
   const [viewingMaterial, setViewingMaterial] = useState<any>(null);
   const [viewerType, setViewerType] = useState<string>('');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   const materialIcons = {
     flashcards: BookOpen,
@@ -300,7 +302,6 @@ export const AIStudyMaterialGenerator = () => {
             difficulty: material.difficulty,
             tags: [material.type, material.difficulty, material.topic].filter(Boolean),
             source: sourceInfo,
-            user_id: user.user_id,
           });
 
           // Additionally save to flashcards table if it's a flashcard
@@ -311,7 +312,6 @@ export const AIStudyMaterialGenerator = () => {
               answer: material.content.answer || '',
               difficulty: material.difficulty,
               tags: [material.topic, material.difficulty].filter(Boolean),
-              user_id: user.user_id,
             });
           }
           
