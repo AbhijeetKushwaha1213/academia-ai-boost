@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Brain, FileQuestion, GitBranch, FileText, Search, Filter, Play, Trash2, Calendar } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { FlashcardViewer } from './FlashcardViewer';
@@ -17,7 +16,6 @@ export const FlashcardVault = () => {
   const { 
     flashcards, 
     studyMaterials, 
-    getStudyMaterialsByType, 
     isLoading, 
     deleteFlashcard, 
     deleteStudyMaterial 
@@ -45,7 +43,7 @@ export const FlashcardVault = () => {
   };
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
+    switch (difficulty?.toLowerCase()) {
       case 'easy': return 'bg-green-100 text-green-800 border-green-300';
       case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'hard': return 'bg-red-100 text-red-800 border-red-300';
@@ -55,12 +53,22 @@ export const FlashcardVault = () => {
 
   const filterContent = (items: any[], type?: string) => {
     return items.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.topic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (type === 'flashcards' ? item.question?.toLowerCase().includes(searchTerm.toLowerCase()) : false);
+      const searchFields = [
+        item.title?.toLowerCase() || '',
+        item.topic?.toLowerCase() || '',
+        item.question?.toLowerCase() || ''
+      ];
       
-      const matchesDifficulty = filterDifficulty === 'all' || item.difficulty === filterDifficulty;
-      const matchesType = filterType === 'all' || item.type === filterType;
+      const matchesSearch = searchTerm === '' || searchFields.some(field => 
+        field.includes(searchTerm.toLowerCase())
+      );
+      
+      const matchesDifficulty = filterDifficulty === 'all' || 
+        item.difficulty?.toLowerCase() === filterDifficulty.toLowerCase();
+      
+      const matchesType = filterType === 'all' || 
+        (type && type === filterType) || 
+        item.type === filterType;
       
       return matchesSearch && matchesDifficulty && matchesType;
     });
@@ -73,10 +81,12 @@ export const FlashcardVault = () => {
   };
 
   const handleDelete = (id: string, type: string) => {
-    if (type === 'flashcards') {
-      deleteFlashcard(id);
-    } else {
-      deleteStudyMaterial(id);
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      if (type === 'flashcards') {
+        deleteFlashcard(id);
+      } else {
+        deleteStudyMaterial(id);
+      }
     }
   };
 
@@ -88,20 +98,20 @@ export const FlashcardVault = () => {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
             <IconComponent className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
+            <h3 className="font-semibold text-gray-900 line-clamp-1">{item.title || 'Untitled'}</h3>
           </div>
           <div className="flex items-center space-x-2">
             <Badge className={`text-xs border ${getDifficultyColor(item.difficulty)}`}>
-              {item.difficulty}
+              {item.difficulty || 'medium'}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {type}
+              {type === 'flashcards' ? 'flashcard' : type}
             </Badge>
           </div>
         </div>
 
         <div className="space-y-2 mb-3">
-          {type === 'flashcards' && (
+          {type === 'flashcards' && item.question && (
             <p className="text-sm text-gray-600 line-clamp-2">
               <strong>Q:</strong> {item.question}
             </p>
@@ -274,13 +284,15 @@ export const FlashcardVault = () => {
     );
   }
 
-  // Combine all content for filtering
-  const allContent = [
-    ...flashcards.map(f => ({ ...f, type: 'flashcards' })),
-    ...studyMaterials
+  // Combine all content for display - separate flashcards from study materials
+  const filteredFlashcards = filterContent(flashcards, 'flashcards');
+  const filteredMaterials = filterContent(studyMaterials);
+  
+  // Combine all for unified display
+  const allFilteredContent = [
+    ...filteredFlashcards.map(f => ({ ...f, type: 'flashcards' })),
+    ...filteredMaterials
   ];
-
-  const filteredContent = filterContent(allContent);
 
   return (
     <div className="space-y-6">
@@ -325,13 +337,25 @@ export const FlashcardVault = () => {
         </div>
       </div>
 
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">Debug Info</h4>
+          <div className="text-sm text-blue-800">
+            <p>Flashcards: {flashcards.length}</p>
+            <p>Study Materials: {studyMaterials.length}</p>
+            <p>Filtered Content: {allFilteredContent.length}</p>
+          </div>
+        </Card>
+      )}
+
       {/* Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredContent.map(item => renderContentCard(item, item.type))}
+        {allFilteredContent.map(item => renderContentCard(item, item.type))}
       </div>
 
       {/* Empty State */}
-      {filteredContent.length === 0 && !isLoading && (
+      {allFilteredContent.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

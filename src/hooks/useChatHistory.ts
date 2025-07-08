@@ -45,16 +45,35 @@ export const useChatHistory = () => {
       }
 
       // Transform the data to match our ChatSession interface
-      return (data || []).map(session => ({
-        ...session,
-        messages: Array.isArray(session.messages) 
-          ? session.messages.map((msg: any) => ({
-              role: msg.role as 'user' | 'assistant',
-              content: msg.content || '',
+      return (data || []).map(session => {
+        let parsedMessages = [];
+        
+        try {
+          // Handle both array and object formats from the database
+          if (Array.isArray(session.messages)) {
+            parsedMessages = session.messages.map((msg: any) => ({
+              role: (msg.role === 'user' || msg.role === 'assistant') ? msg.role : 'user',
+              content: String(msg.content || ''),
               timestamp: msg.timestamp || new Date().toISOString()
-            }))
-          : []
-      })) as ChatSession[];
+            }));
+          } else if (session.messages && typeof session.messages === 'object') {
+            // Handle case where messages might be stored as an object
+            parsedMessages = [];
+          }
+        } catch (e) {
+          console.error('Error parsing messages for session:', session.id, e);
+          parsedMessages = [];
+        }
+
+        return {
+          id: session.id,
+          title: session.title,
+          topic: session.topic,
+          messages: parsedMessages,
+          created_at: session.created_at,
+          updated_at: session.updated_at
+        } as ChatSession;
+      });
     },
     enabled: !!user?.user_id,
   });
@@ -67,7 +86,9 @@ export const useChatHistory = () => {
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert([{
-          ...sessionData,
+          title: sessionData.title,
+          topic: sessionData.topic,
+          messages: sessionData.messages,
           user_id: user.user_id,
         }])
         .select()
@@ -102,7 +123,9 @@ export const useChatHistory = () => {
       const { data, error } = await supabase
         .from('chat_sessions')
         .update({
-          ...updates,
+          title: updates.title,
+          topic: updates.topic,
+          messages: updates.messages,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
