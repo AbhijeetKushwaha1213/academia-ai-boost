@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatHistory, ChatSession } from '@/hooks/useChatHistory';
 import { ChatHistoryPanel } from './ChatHistoryPanel';
+import { format } from 'date-fns';
 
 interface Message {
   id: string;
@@ -137,7 +138,7 @@ export const AIChat = ({
       title: currentTopic || `Chat ${format(new Date(), 'MMM dd, HH:mm')}`,
       topic: currentTopic || 'General',
       messages: messages.slice(1).map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
+        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
         content: msg.text,
         timestamp: msg.timestamp.toISOString()
       }))
@@ -157,7 +158,7 @@ export const AIChat = ({
       ...session.messages.map((msg, index) => ({
         id: `${index + 2}`,
         text: msg.content,
-        sender: msg.role === 'user' ? 'user' : 'ai',
+        sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
         timestamp: new Date(msg.timestamp)
       }))
     ]);
