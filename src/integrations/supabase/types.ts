@@ -1286,6 +1286,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar: string | null
           branch: string | null
           college: string | null
           created_at: string
@@ -1304,6 +1305,7 @@ export type Database = {
           user_type: string
         }
         Insert: {
+          avatar?: string | null
           branch?: string | null
           college?: string | null
           created_at?: string
@@ -1322,6 +1324,7 @@ export type Database = {
           user_type: string
         }
         Update: {
+          avatar?: string | null
           branch?: string | null
           college?: string | null
           created_at?: string

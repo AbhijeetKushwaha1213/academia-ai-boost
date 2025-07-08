@@ -158,13 +158,13 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
         </div>
 
         <div className="flex space-x-3">
-          <label htmlFor="avatar-upload">
+          <label htmlFor="avatar-upload" className="cursor-pointer">
             <Button 
-              as="span" 
               variant="outline" 
               size="sm"
               disabled={uploading}
               className="cursor-pointer"
+              type="button"
             >
               <Upload className="w-4 h-4 mr-2" />
               {uploading ? 'Uploading...' : 'Upload Photo'}
