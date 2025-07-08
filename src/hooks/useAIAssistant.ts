@@ -67,6 +67,95 @@ export const useAIAssistant = () => {
     }
   };
 
+  const generateContent = async (contentType: string, topic: string, difficulty: string, count: number, subject?: string) => {
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          message: topic,
+          contentType,
+          topic,
+          difficulty,
+          count,
+          subject,
+          userType: user?.userType || 'exam'
+        }
+      });
+
+      if (error) throw error;
+
+      // Parse the AI response to extract JSON content
+      let parsedContent;
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = data.response.match(/```json\n?(.*?)\n?```/s) || 
+                         data.response.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          parsedContent = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        } else {
+          // If no JSON found, try parsing the entire response
+          parsedContent = JSON.parse(data.response);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', parseError);
+        // Fallback: create structured content from text response
+        parsedContent = createFallbackContent(contentType, data.response, topic, difficulty, count);
+      }
+
+      return parsedContent;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createFallbackContent = (contentType: string, response: string, topic: string, difficulty: string, count: number) => {
+    // Create fallback structured content if AI doesn't return proper JSON
+    switch (contentType) {
+      case 'flashcards':
+        return {
+          flashcards: Array.from({ length: count }, (_, i) => ({
+            question: `What is the key concept ${i + 1} about ${topic}?`,
+            answer: `This is a detailed answer about ${topic} concept ${i + 1}.`,
+            hint: `Remember the importance of ${topic} in this context.`
+          }))
+        };
+      case 'mindmaps':
+        return {
+          mindmap: {
+            central_topic: topic,
+            branches: [
+              {
+                title: `Main Concept`,
+                subtopics: [`Subtopic 1`, `Subtopic 2`],
+                details: `Key aspects of ${topic}`
+              }
+            ]
+          }
+        };
+      case 'quizzes':
+        return {
+          quiz: Array.from({ length: count }, (_, i) => ({
+            question: `Quiz question ${i + 1} about ${topic}?`,
+            options: [`Option A`, `Option B`, `Option C`, `Option D`],
+            correct_answer: 0,
+            explanation: `Explanation for question ${i + 1} about ${topic}.`
+          }))
+        };
+      default:
+        return { content: response };
+    }
+  };
+
   const clearChat = () => {
     setMessages([]);
   };
@@ -74,6 +163,7 @@ export const useAIAssistant = () => {
   return {
     messages,
     sendMessage,
+    generateContent,
     clearChat,
     isLoading,
   };

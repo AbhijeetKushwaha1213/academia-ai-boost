@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X } from 'lucide-react';
+import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X, Eye } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useStudyMaterials } from '@/hooks/useStudyMaterials';
+import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { FlashcardViewer } from '@/components/flashcards/FlashcardViewer';
+import { QuizViewer } from '@/components/flashcards/QuizViewer';
+import { MindMapViewer } from '@/components/flashcards/MindMapViewer';
 
 type MaterialType = 'flashcards' | 'mindmaps' | 'quizzes' | 'diagrams' | 'notes';
 
@@ -29,6 +32,7 @@ export const AIStudyMaterialGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { createMultipleMaterials, isBulkCreating } = useStudyMaterials();
+  const { generateContent, isLoading } = useAIAssistant();
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
@@ -39,6 +43,8 @@ export const AIStudyMaterialGenerator = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [uploadedContent, setUploadedContent] = useState('');
+  const [viewingMaterial, setViewingMaterial] = useState<any>(null);
+  const [viewerType, setViewerType] = useState<string>('');
 
   const materialIcons = {
     flashcards: BookOpen,
@@ -121,87 +127,118 @@ export const AIStudyMaterialGenerator = () => {
       return;
     }
 
-    setIsGenerating(true);
-    
     try {
-      console.log('AIStudyMaterialGenerator: Starting generation:', { 
+      console.log('AIStudyMaterialGenerator: Starting enhanced generation:', { 
         type: materialType, 
         finalContent, 
         topic, 
         difficulty, 
         count 
       });
-      
-      // Simulate AI generation with proper content structure
-      const materials = [];
+
+      const subject = user?.userType === 'college' ? user?.course : user?.examType;
+      const aiResponse = await generateContent(
+        materialType,
+        finalContent || topic,
+        difficulty,
+        parseInt(count),
+        subject
+      );
+
+      console.log('AIStudyMaterialGenerator: Received AI response:', aiResponse);
+
+      // Parse the AI response based on content type
+      let materials = [];
       const numItems = parseInt(count);
       const materialTopic = topic || finalContent.substring(0, 30) + '...';
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      for (let i = 0; i < numItems; i++) {
-        let materialContent;
-        
-        switch (materialType) {
-          case 'flashcards':
-            materialContent = {
-              question: `What is the key concept about "${materialTopic}" that relates to point ${i + 1}?`,
-              answer: `This is a detailed answer for concept ${i + 1} about ${materialTopic}. The answer explains the fundamental principles and provides practical examples for better understanding.`,
-              tags: [topic.toLowerCase() || 'study', difficulty]
-            };
-            break;
-          case 'mindmaps':
-            materialContent = {
-              central_topic: materialTopic,
-              branches: [
-                { title: `Branch ${i + 1}A`, subtopics: [`Subtopic 1`, `Subtopic 2`] },
-                { title: `Branch ${i + 1}B`, subtopics: [`Subtopic 3`, `Subtopic 4`] }
-              ]
-            };
-            break;
-          case 'quizzes':
-            materialContent = {
-              question: `Quiz question ${i + 1} about ${materialTopic}?`,
-              options: ['Option A', 'Option B', 'Option C', 'Option D'],
-              correct_answer: 0,
-              explanation: `Explanation for question ${i + 1} about ${materialTopic}.`
-            };
-            break;
-          case 'diagrams':
-            materialContent = {
-              title: `${materialTopic} - Diagram ${i + 1}`,
-              components: [`Component A`, `Component B`, `Component C`],
-              relationships: [`A connects to B`, `B influences C`]
-            };
-            break;
-          case 'notes':
-            materialContent = {
-              title: `${materialTopic} - Note ${i + 1}`,
-              content: `Comprehensive notes about ${materialTopic}, covering key concepts, important formulas, and practical applications. This section explains the fundamental principles in detail.`,
-              key_points: [`Key point 1`, `Key point 2`, `Key point 3`]
-            };
-            break;
-        }
 
-        materials.push({
-          id: `generated-${Date.now()}-${i}`,
-          type: materialType,
-          title: `${materialTopic} - ${materialType.charAt(0).toUpperCase() + materialType.slice(1)} ${i + 1}`,
-          content: materialContent,
-          topic: materialTopic,
-          difficulty,
-          created_at: new Date().toISOString(),
-          selected: true
-        });
+      switch (materialType) {
+        case 'flashcards':
+          if (aiResponse.flashcards) {
+            materials = aiResponse.flashcards.map((card: any, i: number) => ({
+              id: `generated-${Date.now()}-${i}`,
+              type: materialType,
+              title: `${materialTopic} - Flashcard ${i + 1}`,
+              content: card,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }));
+          }
+          break;
+
+        case 'mindmaps':
+          if (aiResponse.mindmap) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Mind Map`,
+              content: aiResponse.mindmap,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'quizzes':
+          if (aiResponse.quiz) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Quiz`,
+              content: { questions: aiResponse.quiz },
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'diagrams':
+          if (aiResponse.diagram) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Diagram`,
+              content: aiResponse.diagram,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'notes':
+          if (aiResponse.notes) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Notes`,
+              content: aiResponse.notes,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
       }
 
-      console.log('AIStudyMaterialGenerator: Generated materials:', materials);
+      if (materials.length === 0) {
+        throw new Error('No valid content generated');
+      }
+
+      console.log('AIStudyMaterialGenerator: Processed materials:', materials);
       setGeneratedMaterials(materials);
 
       toast({
-        title: "Materials Generated Successfully! 🎉",
-        description: `Generated ${materials.length} ${materialType}. Review and select which ones to save.`,
+        title: "Enhanced Content Generated! 🎉",
+        description: `Generated ${materials.length} high-quality ${materialType}. Review and save your content.`,
       });
     } catch (error) {
       console.error('AIStudyMaterialGenerator: Error generating materials:', error);
@@ -210,8 +247,6 @@ export const AIStudyMaterialGenerator = () => {
         description: "Failed to generate study materials. Please try again with different content.",
         variant: "destructive",
       });
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -267,19 +302,23 @@ export const AIStudyMaterialGenerator = () => {
     }
   };
 
+  const viewMaterial = (material: any) => {
+    setViewingMaterial(material);
+    setViewerType(material.type);
+  };
+
   const renderMaterialPreview = (material: GeneratedMaterial) => {
     const IconComponent = materialIcons[material.type];
     
     return (
       <Card 
         key={material.id} 
-        className={`p-4 cursor-pointer transition-all ${
+        className={`p-4 transition-all ${
           material.selected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'
         }`}
-        onClick={() => toggleMaterialSelection(material.id)}
       >
         <div className="flex items-start justify-between">
-          <div className="flex-1">
+          <div className="flex-1" onClick={() => toggleMaterialSelection(material.id)}>
             <div className="flex items-center space-x-2 mb-2">
               <IconComponent className="w-4 h-4 text-purple-600" />
               <h4 className="font-medium text-gray-900">{material.title}</h4>
@@ -288,60 +327,139 @@ export const AIStudyMaterialGenerator = () => {
               </Badge>
             </div>
             
-            {/* Render different previews based on type */}
+            {/* Enhanced preview content */}
             {material.type === 'flashcards' && (
               <div className="text-sm text-gray-600">
                 <p><strong>Q:</strong> {material.content.question}</p>
-                <p className="mt-1"><strong>A:</strong> {material.content.answer.substring(0, 100)}...</p>
+                <p className="mt-1"><strong>A:</strong> {material.content.answer?.substring(0, 100)}...</p>
               </div>
             )}
             
             {material.type === 'mindmaps' && (
               <div className="text-sm text-gray-600">
                 <p><strong>Central Topic:</strong> {material.content.central_topic}</p>
-                <p><strong>Branches:</strong> {material.content.branches.length} main branches</p>
+                <p><strong>Branches:</strong> {material.content.branches?.length || 0} main branches</p>
               </div>
             )}
             
             {material.type === 'quizzes' && (
               <div className="text-sm text-gray-600">
-                <p><strong>Q:</strong> {material.content.question}</p>
-                <p><strong>Options:</strong> {material.content.options.length} choices</p>
+                <p><strong>Questions:</strong> {material.content.questions?.length || 0} quiz questions</p>
+                <p><strong>Type:</strong> Multiple choice with explanations</p>
               </div>
             )}
             
             {material.type === 'diagrams' && (
               <div className="text-sm text-gray-600">
-                <p><strong>Components:</strong> {material.content.components.join(', ')}</p>
+                <p><strong>Title:</strong> {material.content.title}</p>
+                <p><strong>Components:</strong> {material.content.components?.length || 0} elements</p>
               </div>
             )}
             
             {material.type === 'notes' && (
               <div className="text-sm text-gray-600">
-                <p>{material.content.content.substring(0, 150)}...</p>
+                <p><strong>Key Points:</strong> {material.content.key_points?.length || 0} main concepts</p>
+                <p>{material.content.summary?.substring(0, 100)}...</p>
               </div>
             )}
           </div>
-          <div className="ml-4">
-            {material.selected ? (
-              <div className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✓</span>
-              </div>
-            ) : (
-              <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
-            )}
+          
+          <div className="ml-4 flex flex-col space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                viewMaterial(material);
+              }}
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Preview
+            </Button>
+            
+            <div>
+              {material.selected ? (
+                <div className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">✓</span>
+                </div>
+              ) : (
+                <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+              )}
+            </div>
           </div>
         </div>
       </Card>
     );
   };
 
+  // Show viewer if material is being viewed
+  if (viewingMaterial) {
+    switch (viewerType) {
+      case 'flashcards':
+        return (
+          <FlashcardViewer
+            flashcards={[viewingMaterial.content]}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
+      case 'quizzes':
+        return (
+          <QuizViewer
+            questions={viewingMaterial.content.questions || []}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
+      case 'mindmaps':
+        return (
+          <MindMapViewer
+            mindmap={viewingMaterial.content}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
+      default:
+        return (
+          <div className="space-y-6">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setViewingMaterial(null);
+                setViewerType('');
+              }}
+            >
+              ← Back to Generator
+            </Button>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">{viewingMaterial.title}</h3>
+              <pre className="whitespace-pre-wrap text-sm">
+                {JSON.stringify(viewingMaterial.content, null, 2)}
+              </pre>
+            </Card>
+          </div>
+        );
+    }
+  }
+
   return (
     <div className="space-y-6 pb-20">
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Wand2 className="w-5 h-5 text-purple-600" />
-          <h2 className="text-lg font-semibold text-gray-900">AI Study Material Generator</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Enhanced AI Study Material Generator</h2>
         </div>
 
         <div className="space-y-4">
@@ -355,11 +473,11 @@ export const AIStudyMaterialGenerator = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="flashcards">📚 Flashcards</SelectItem>
-                <SelectItem value="mindmaps">🧠 Mind Maps</SelectItem>
-                <SelectItem value="quizzes">❓ Quizzes</SelectItem>
-                <SelectItem value="diagrams">📊 Diagrams</SelectItem>
-                <SelectItem value="notes">📝 Revision Notes</SelectItem>
+                <SelectItem value="flashcards">📚 Smart Flashcards</SelectItem>
+                <SelectItem value="mindmaps">🧠 Interactive Mind Maps</SelectItem>
+                <SelectItem value="quizzes">❓ Engaging Quizzes</SelectItem>
+                <SelectItem value="diagrams">📊 Visual Diagrams</SelectItem>
+                <SelectItem value="notes">📝 Structured Notes</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -475,18 +593,18 @@ export const AIStudyMaterialGenerator = () => {
           {/* Generate Button */}
           <Button 
             onClick={generateMaterial}
-            disabled={isGenerating || (!content.trim() && !topic.trim() && !uploadedContent.trim())}
+            disabled={isLoading || (!content.trim() && !topic.trim() && !uploadedContent.trim())}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            {isGenerating ? (
+            {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating {materialType}...
+                Generating Enhanced {materialType}...
               </>
             ) : (
               <>
                 <Wand2 className="w-4 h-4 mr-2" />
-                Generate {materialType.charAt(0).toUpperCase() + materialType.slice(1)}
+                Generate Enhanced {materialType.charAt(0).toUpperCase() + materialType.slice(1)}
               </>
             )}
           </Button>
@@ -497,7 +615,9 @@ export const AIStudyMaterialGenerator = () => {
       {generatedMaterials.length > 0 && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Generated {materialType.charAt(0).toUpperCase() + materialType.slice(1)}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Generated {materialType.charAt(0).toUpperCase() + materialType.slice(1)}
+            </h3>
             <Button 
               onClick={saveSelectedMaterials}
               disabled={isBulkCreating || !generatedMaterials.some(material => material.selected)}
