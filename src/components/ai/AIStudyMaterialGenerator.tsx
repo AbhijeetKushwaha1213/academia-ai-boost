@@ -14,6 +14,7 @@ import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { FlashcardViewer } from '@/components/flashcards/FlashcardViewer';
 import { QuizViewer } from '@/components/flashcards/QuizViewer';
 import { MindMapViewer } from '@/components/flashcards/MindMapViewer';
+import { useFlashcards } from '@/hooks/useFlashcards';
 
 type MaterialType = 'flashcards' | 'mindmaps' | 'quizzes' | 'diagrams' | 'notes';
 
@@ -32,6 +33,7 @@ export const AIStudyMaterialGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { createMultipleMaterials, isBulkCreating } = useStudyMaterials();
+  const { createFlashcard, createStudyMaterial } = useFlashcards();
   const { generateContent, isLoading } = useAIAssistant();
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -269,29 +271,73 @@ export const AIStudyMaterialGenerator = () => {
       return;
     }
 
+    if (!user?.user_id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    let successCount = 0;
+    let errorCount = 0;
+
     try {
       console.log('AIStudyMaterialGenerator: Saving selected materials:', selectedMaterials);
       
-      // Convert to the format expected by the database
-      const materialsToSave = selectedMaterials.map(material => ({
-        title: material.title,
-        content: material.content,
-        type: material.type,
-        topic: material.topic,
-        difficulty: material.difficulty,
-        tags: [], // Can be enhanced later
-        source: uploadedFile || content.substring(0, 50) || topic,
-      }));
+      for (const material of selectedMaterials) {
+        try {
+          const sourceInfo = uploadedFile || content.substring(0, 50) || topic;
+          
+          // Save to study_materials table for all types
+          await createStudyMaterial({
+            title: material.title,
+            content: material.content,
+            type: material.type,
+            topic: material.topic,
+            difficulty: material.difficulty,
+            tags: [material.type, material.difficulty, material.topic].filter(Boolean),
+            source: sourceInfo,
+            user_id: user.user_id,
+          });
 
-      // Save using the hook
-      createMultipleMaterials(materialsToSave);
-      
-      // Reset form on success (the hook will handle the success toast)
-      setGeneratedMaterials([]);
-      setContent('');
-      setTopic('');
-      setUploadedContent('');
-      setUploadedFile(null);
+          // Additionally save to flashcards table if it's a flashcard
+          if (material.type === 'flashcards' && material.content) {
+            await createFlashcard({
+              title: material.title,
+              question: material.content.question || '',
+              answer: material.content.answer || '',
+              difficulty: material.difficulty,
+              tags: [material.topic, material.difficulty].filter(Boolean),
+              user_id: user.user_id,
+            });
+          }
+          
+          successCount++;
+          console.log('Successfully saved material:', material.title);
+        } catch (error) {
+          console.error('Error saving material:', material.title, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Content Saved Successfully! 🎉",
+          description: `Successfully saved ${successCount} items to your study vault.${errorCount > 0 ? ` ${errorCount} items failed to save.` : ''}`,
+        });
+        
+        // Reset form on success
+        setGeneratedMaterials([]);
+        setContent('');
+        setTopic('');
+        setUploadedContent('');
+        setUploadedFile(null);
+      } else {
+        throw new Error('All items failed to save');
+      }
     } catch (error) {
       console.error('AIStudyMaterialGenerator: Error in saving process:', error);
       toast({
@@ -299,6 +345,8 @@ export const AIStudyMaterialGenerator = () => {
         description: "Failed to save study materials. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -620,10 +668,10 @@ export const AIStudyMaterialGenerator = () => {
             </h3>
             <Button 
               onClick={saveSelectedMaterials}
-              disabled={isBulkCreating || !generatedMaterials.some(material => material.selected)}
+              disabled={isCreating || !generatedMaterials.some(material => material.selected)}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isBulkCreating ? (
+              {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...

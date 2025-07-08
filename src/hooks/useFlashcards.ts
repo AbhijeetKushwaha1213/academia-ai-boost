@@ -20,6 +20,19 @@ export interface Flashcard {
   updated_at: string;
 }
 
+export interface StudyMaterial {
+  id: string;
+  title: string;
+  content: any;
+  type: 'flashcards' | 'mindmaps' | 'quizzes' | 'diagrams' | 'notes';
+  topic: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+  source: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useFlashcards = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -51,6 +64,37 @@ export const useFlashcards = () => {
     enabled: !!user?.user_id,
   });
 
+  // Fetch all study materials for the current user
+  const {
+    data: studyMaterials = [],
+    isLoading: isLoadingMaterials,
+    error: materialsError
+  } = useQuery({
+    queryKey: ['study_materials', user?.user_id],
+    queryFn: async () => {
+      if (!user?.user_id) return [];
+      
+      const { data, error } = await supabase
+        .from('study_materials')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching study materials:', error);
+        throw error;
+      }
+
+      return data as StudyMaterial[];
+    },
+    enabled: !!user?.user_id,
+  });
+
+  // Filter study materials by type
+  const getStudyMaterialsByType = (type: string) => {
+    return studyMaterials.filter(material => material.type === type);
+  };
+
   // Create new flashcard
   const createFlashcard = useMutation({
     mutationFn: async (newFlashcard: Omit<Flashcard, 'id' | 'created_at' | 'updated_at' | 'mastery_level' | 'review_count' | 'last_reviewed' | 'next_review'>) => {
@@ -79,6 +123,7 @@ export const useFlashcards = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+      queryClient.invalidateQueries({ queryKey: ['study_materials'] });
       toast({
         title: "Flashcard Created",
         description: "Your new flashcard has been added successfully.",
@@ -89,6 +134,46 @@ export const useFlashcards = () => {
       toast({
         title: "Error",
         description: "Failed to create flashcard. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create new study material
+  const createStudyMaterial = useMutation({
+    mutationFn: async (newMaterial: Omit<StudyMaterial, 'id' | 'created_at' | 'updated_at'>) => {
+      if (!user?.user_id) throw new Error('User not authenticated');
+
+      console.log('Creating study material:', newMaterial);
+
+      const { data, error } = await supabase
+        .from('study_materials')
+        .insert([{
+          ...newMaterial,
+          user_id: user.user_id,
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating study material:', error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['study_materials'] });
+      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+      toast({
+        title: "Content Saved",
+        description: `Your ${data.type} has been saved successfully.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating study material:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save content. Please try again.",
         variant: "destructive",
       });
     },
@@ -154,15 +239,46 @@ export const useFlashcards = () => {
     },
   });
 
+  // Delete study material
+  const deleteStudyMaterial = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('study_materials')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study_materials'] });
+      toast({
+        title: "Content Deleted",
+        description: "Your content has been removed successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting study material:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     flashcards,
-    isLoading,
-    error,
+    studyMaterials,
+    getStudyMaterialsByType,
+    isLoading: isLoading || isLoadingMaterials,
+    error: error || materialsError,
     createFlashcard: createFlashcard.mutate,
+    createStudyMaterial: createStudyMaterial.mutate,
     updateFlashcard: updateFlashcard.mutate,
     deleteFlashcard: deleteFlashcard.mutate,
-    isCreating: createFlashcard.isPending,
+    deleteStudyMaterial: deleteStudyMaterial.mutate,
+    isCreating: createFlashcard.isPending || createStudyMaterial.isPending,
     isUpdating: updateFlashcard.isPending,
-    isDeleting: deleteFlashcard.isPending,
+    isDeleting: deleteFlashcard.isPending || deleteStudyMaterial.isPending,
   };
 };
