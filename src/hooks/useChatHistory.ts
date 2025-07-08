@@ -47,7 +47,13 @@ export const useChatHistory = () => {
       // Transform the data to match our ChatSession interface
       return (data || []).map(session => ({
         ...session,
-        messages: Array.isArray(session.messages) ? session.messages : []
+        messages: Array.isArray(session.messages) 
+          ? session.messages.map((msg: any) => ({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content || '',
+              timestamp: msg.timestamp || new Date().toISOString()
+            }))
+          : []
       })) as ChatSession[];
     },
     enabled: !!user?.user_id,
