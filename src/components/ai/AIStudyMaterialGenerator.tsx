@@ -136,7 +136,7 @@ export const AIStudyMaterialGenerator = () => {
         count 
       });
 
-      const subject = user?.userType === 'college' ? user?.course : user?.examType;
+      const subject = user?.userType === 'college' ? user?.branch : user?.examType;
       const aiResponse = await generateContent(
         materialType,
         finalContent || topic,
