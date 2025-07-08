@@ -7,7 +7,7 @@ import { ContentRenderer } from './ContentRenderer';
 import { QuickActions } from '../common/QuickActions';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { X, Menu, Maximize, Minimize } from 'lucide-react';
+import { X, Menu, Maximize, Minimize, EyeOff } from 'lucide-react';
 
 interface AppLayoutProps {
   user: any;
@@ -27,6 +27,7 @@ export const AppLayout = ({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [fullScreenMode, setFullScreenMode] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   console.log('AppLayout render - activeTab:', activeTab, 'user:', user?.id);
 
@@ -43,6 +44,10 @@ export const AppLayout = ({
     setSidebarOpen(!sidebarOpen);
   };
 
+  const toggleSidebarVisibility = () => {
+    setSidebarHidden(!sidebarHidden);
+  };
+
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
@@ -53,12 +58,12 @@ export const AppLayout = ({
 
   return (
     <div className="min-h-screen bg-gray-50 flex overflow-hidden">
-      {/* Desktop Sidebar - Collapsible */}
+      {/* Desktop Sidebar - Collapsible and Hideable */}
       <div className={`hidden lg:flex transition-all duration-300 ease-in-out ${
-        fullScreenMode ? 'w-0' : sidebarOpen ? 'w-64' : 'w-0'
+        fullScreenMode || sidebarHidden ? 'w-0' : sidebarOpen ? 'w-64' : 'w-0'
       }`}>
         <div className={`w-64 transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen && !sidebarHidden ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <DesktopSidebar 
             activeTab={activeTab} 
@@ -96,7 +101,7 @@ export const AppLayout = ({
         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
           <div className="flex items-center space-x-4">
             {/* Sidebar Toggle - Desktop */}
-            {!fullScreenMode && (
+            {!fullScreenMode && !sidebarHidden && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -130,6 +135,19 @@ export const AppLayout = ({
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Hide Sidebar Toggle */}
+            {!fullScreenMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebarVisibility}
+                className="hidden lg:flex"
+                title={sidebarHidden ? 'Show Sidebar' : 'Hide Sidebar'}
+              >
+                <EyeOff className="w-5 h-5" />
+              </Button>
+            )}
+
             {/* Full Screen Toggle */}
             <Button
               variant="ghost"

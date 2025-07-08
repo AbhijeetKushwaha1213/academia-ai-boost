@@ -25,8 +25,16 @@ export const FlashcardVault = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
   const [viewingContent, setViewingContent] = useState<any>(null);
   const [viewerType, setViewerType] = useState<string>('');
+
+  console.log('FlashcardVault: Current data:', { 
+    flashcardsCount: flashcards.length, 
+    materialsCount: studyMaterials.length,
+    flashcardsData: flashcards.slice(0, 2),
+    materialsData: studyMaterials.slice(0, 2)
+  });
 
   const materialIcons = {
     flashcards: BookOpen,
@@ -49,11 +57,12 @@ export const FlashcardVault = () => {
     return items.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.topic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (type === 'flashcards' ? item.question.toLowerCase().includes(searchTerm.toLowerCase()) : false);
+                           (type === 'flashcards' ? item.question?.toLowerCase().includes(searchTerm.toLowerCase()) : false);
       
       const matchesDifficulty = filterDifficulty === 'all' || item.difficulty === filterDifficulty;
+      const matchesType = filterType === 'all' || item.type === filterType;
       
-      return matchesSearch && matchesDifficulty;
+      return matchesSearch && matchesDifficulty && matchesType;
     });
   };
 
@@ -84,6 +93,9 @@ export const FlashcardVault = () => {
           <div className="flex items-center space-x-2">
             <Badge className={`text-xs border ${getDifficultyColor(item.difficulty)}`}>
               {item.difficulty}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {type}
             </Badge>
           </div>
         </div>
@@ -262,97 +274,81 @@ export const FlashcardVault = () => {
     );
   }
 
+  // Combine all content for filtering
+  const allContent = [
+    ...flashcards.map(f => ({ ...f, type: 'flashcards' })),
+    ...studyMaterials
+  ];
+
+  const filteredContent = filterContent(allContent);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Study Vault</h1>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
             <Input
               placeholder="Search by title, topic, or content..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-full sm:w-64"
             />
           </div>
           <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All Levels</SelectItem>
               <SelectItem value="easy">Easy</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="hard">Hard</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="flashcards">Flashcards</SelectItem>
+              <SelectItem value="quizzes">Quizzes</SelectItem>
+              <SelectItem value="mindmaps">Mind Maps</SelectItem>
+              <SelectItem value="notes">Notes</SelectItem>
+              <SelectItem value="diagrams">Diagrams</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Content Tabs */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
-          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-          <TabsTrigger value="mindmaps">Mind Maps</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="diagrams">Diagrams</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Render all flashcards */}
-            {filterContent(flashcards, 'flashcards').map(item => renderContentCard(item, 'flashcards'))}
-            
-            {/* Render all study materials */}
-            {filterContent(studyMaterials).map(item => renderContentCard(item, item.type))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="flashcards" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterContent(flashcards, 'flashcards').map(item => renderContentCard(item, 'flashcards'))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="quizzes" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterContent(getStudyMaterialsByType('quizzes')).map(item => renderContentCard(item, 'quizzes'))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="mindmaps" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterContent(getStudyMaterialsByType('mindmaps')).map(item => renderContentCard(item, 'mindmaps'))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="notes" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterContent(getStudyMaterialsByType('notes')).map(item => renderContentCard(item, 'notes'))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="diagrams" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterContent(getStudyMaterialsByType('diagrams')).map(item => renderContentCard(item, 'diagrams'))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredContent.map(item => renderContentCard(item, item.type))}
+      </div>
 
       {/* Empty State */}
-      {flashcards.length === 0 && studyMaterials.length === 0 && (
+      {filteredContent.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No study materials yet</h3>
-          <p className="text-gray-600 mb-4">Create your first flashcards, quizzes, or notes to get started!</p>
-          <Button variant="outline">
-            Go to AI Generator
-          </Button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {flashcards.length === 0 && studyMaterials.length === 0 
+              ? "No study materials yet" 
+              : "No materials match your search"}
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {flashcards.length === 0 && studyMaterials.length === 0 
+              ? "Create your first flashcards, quizzes, or notes to get started!" 
+              : "Try adjusting your search terms or filters"}
+          </p>
+          {flashcards.length === 0 && studyMaterials.length === 0 && (
+            <Button variant="outline" onClick={() => window.location.href = '/generate'}>
+              Go to AI Generator
+            </Button>
+          )}
         </div>
       )}
     </div>
