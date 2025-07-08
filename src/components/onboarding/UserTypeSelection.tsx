@@ -64,7 +64,6 @@ export const UserTypeSelection = () => {
 
       await updateUserType(selectedType, details);
       
-      // Show success message
       toast({
         title: "Profile Setup Complete! 🚀",
         description: "Your personalized dashboard is being built...",
@@ -78,15 +77,14 @@ export const UserTypeSelection = () => {
   };
 
   const examOptions = [
-    'JEE (Joint Entrance Examination)',
     'NEET (Medical Entrance)',
+    'JEE (Joint Entrance Examination)', 
     'UPSC (Civil Services)',
     'GATE (Graduate Aptitude Test)',
-    'CAT (MBA Entrance)',
-    'Bank PO/Clerk',
-    'SSC (Staff Selection Commission)',
-    'Railway Exams',
     'CUET (Common University Entrance)',
+    'Bank/SSC (Banking & Government)',
+    'CAT (MBA Entrance)',
+    'CLAT (Law Entrance)',
     'Other'
   ];
 
