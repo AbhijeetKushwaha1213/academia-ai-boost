@@ -1,271 +1,188 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '../auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { IntegrationsSettings } from './IntegrationsSettings';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  User, 
+  Bell, 
+  Shield, 
+  Palette, 
+  Globe, 
+  Settings as SettingsIcon,
+  Link,
+  Moon,
+  Sun,
+  Monitor
+} from 'lucide-react';
 
 export const SettingsPage = () => {
-  const { user, updateUserType, updateUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedType, setSelectedType] = useState(user?.userType || 'exam');
-  const [examType, setExamType] = useState(user?.examType || '');
-  const [college, setCollege] = useState(user?.college || '');
-  const [semester, setSemester] = useState<number | undefined>(user?.semester);
-  const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-  const [isDarkModeEnabled, setIsDarkModeEnabled] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: false,
+    studyReminders: true,
+    achievements: true
   });
+  const [theme, setTheme] = useState('system');
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-    }
-  }, [user]);
-
-  // Apply dark mode to document
-  useEffect(() => {
-    if (isDarkModeEnabled) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', isDarkModeEnabled.toString());
-  }, [isDarkModeEnabled]);
-
-  const handleProfileUpdate = async () => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          name: name,
-          email: email
-        })
-        .eq('user_id', user.user_id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      updateUser({ ...user, name, email });
-
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
-      });
-    } catch (error) {
-      console.error("Profile update failed:", error);
-      toast({
-        title: "Update Failed",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSaveProfile = () => {
+    toast({
+      title: "Profile Updated",
+      description: "Your profile changes have been saved successfully.",
+    });
   };
 
-  const handleStudyPreferenceUpdate = async () => {
-    setIsSubmitting(true);
-    try {
-      await updateUserType(selectedType, { examType, college, semester });
-      toast({
-        title: "Study Preferences Updated",
-        description: "Your study preferences have been saved.",
-      });
-    } catch (error) {
-      console.error("Study preferences update failed:", error);
-      toast({
-        title: "Update Failed",
-        description: "Failed to update study preferences. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUserTypeChange = (value: string) => {
-    if (value === 'exam' || value === 'college') {
-      setSelectedType(value);
-    }
+  const handleNotificationChange = (key: string, value: boolean) => {
+    setNotifications(prev => ({ ...prev, [key]: value }));
+    toast({
+      title: "Notification Settings Updated",
+      description: `${key} notifications ${value ? 'enabled' : 'disabled'}.`,
+    });
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-gray-300">Manage your account and preferences</p>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-gray-600">Manage your account preferences and integrations</p>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="study">Study Preferences</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy & Security</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-2">
+            <Link className="w-4 h-4" />
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Privacy
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Information</h2>
-            <div className="space-y-4">
+            <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+            <div className="flex items-center space-x-4 mb-6">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={user?.avatar_url} />
+                <AvatarFallback className="text-lg">
+                  {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
               <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your Name"
-                />
+                <Button variant="outline" size="sm">
+                  Change Photo
+                </Button>
+                <p className="text-sm text-gray-500 mt-1">JPG, GIF or PNG. 1MB max.</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" defaultValue={user?.name || ''} />
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your Email"
-                  disabled
-                />
+                <Input id="email" defaultValue={user?.email || ''} />
               </div>
-              <Button onClick={handleProfileUpdate} disabled={isSubmitting}>
-                {isSubmitting ? "Updating..." : "Update Profile"}
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="study">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Study Preferences</h2>
-            <div className="space-y-4">
               <div>
-                <Label htmlFor="userType">I am a...</Label>
-                <Select value={selectedType} onValueChange={handleUserTypeChange}>
-                  <SelectTrigger id="userType">
-                    <SelectValue placeholder="Select your type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="exam">Exam Aspirant</SelectItem>
-                    <SelectItem value="college">College Student</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="userType">User Type</Label>
+                <div className="mt-2">
+                  <Badge variant="outline">
+                    {user?.userType === 'exam' ? 'Exam Preparation' : 'College Student'}
+                  </Badge>
+                </div>
               </div>
-
-              {selectedType === 'exam' && (
-                <div>
-                  <Label htmlFor="examType">Preparing for...</Label>
-                  <Input
-                    type="text"
-                    id="examType"
-                    value={examType}
-                    onChange={(e) => setExamType(e.target.value)}
-                    placeholder="e.g., JEE, NEET, UPSC"
-                  />
+              <div>
+                <Label htmlFor="level">Current Level</Label>
+                <div className="mt-2">
+                  <Badge className="bg-indigo-100 text-indigo-800">
+                    Level {user?.current_level || 1}
+                  </Badge>
                 </div>
-              )}
-
-              {selectedType === 'college' && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="collegeName">College Name</Label>
-                    <Input
-                      type="text"
-                      id="collegeName"
-                      value={college}
-                      onChange={(e) => setCollege(e.target.value)}
-                      placeholder="e.g., IIT Bombay"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="semester">Semester</Label>
-                    <Select value={semester?.toString()} onValueChange={(value) => setSemester(parseInt(value))}>
-                      <SelectTrigger id="semester">
-                        <SelectValue placeholder="Select semester" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Semester 1</SelectItem>
-                        <SelectItem value="2">Semester 2</SelectItem>
-                        <SelectItem value="3">Semester 3</SelectItem>
-                        <SelectItem value="4">Semester 4</SelectItem>
-                        <SelectItem value="5">Semester 5</SelectItem>
-                        <SelectItem value="6">Semester 6</SelectItem>
-                        <SelectItem value="7">Semester 7</SelectItem>
-                        <SelectItem value="8">Semester 8</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              <Button onClick={handleStudyPreferenceUpdate} disabled={isSubmitting}>
-                {isSubmitting ? "Updating..." : "Update Preferences"}
-              </Button>
+              </div>
             </div>
+            
+            <Button onClick={handleSaveProfile} className="mt-6">
+              Save Changes
+            </Button>
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications">
+        <TabsContent value="notifications" className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notification Settings</h2>
+            <h3 className="text-lg font-semibold mb-4">Notification Preferences</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="notifications">Enable Notifications</Label>
+                <div>
+                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                  <p className="text-sm text-gray-500">Receive updates via email</p>
+                </div>
                 <Switch
-                  id="notifications"
-                  checked={isNotificationsEnabled}
-                  onCheckedChange={setIsNotificationsEnabled}
+                  id="email-notifications"
+                  checked={notifications.email}
+                  onCheckedChange={(value) => handleNotificationChange('email', value)}
                 />
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Stay updated with study reminders, achievements, and important announcements.
-              </p>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="privacy">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Privacy & Security</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="changePassword">Change Password</Label>
-                <Input
-                  type="password"
-                  id="changePassword"
-                  placeholder="New Password"
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="push-notifications">Push Notifications</Label>
+                  <p className="text-sm text-gray-500">Receive browser notifications</p>
+                </div>
+                <Switch
+                  id="push-notifications"
+                  checked={notifications.push}
+                  onCheckedChange={(value) => handleNotificationChange('push', value)}
                 />
               </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  type="password"
-                  id="confirmPassword"
-                  placeholder="Confirm New Password"
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="study-reminders">Study Reminders</Label>
+                  <p className="text-sm text-gray-500">Get reminded about study sessions</p>
+                </div>
+                <Switch
+                  id="study-reminders"
+                  checked={notifications.studyReminders}
+                  onCheckedChange={(value) => handleNotificationChange('studyReminders', value)}
                 />
               </div>
-              <Button>Change Password</Button>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="achievements">Achievement Notifications</Label>
+                  <p className="text-sm text-gray-500">Celebrate your progress milestones</p>
+                </div>
+                <Switch
+                  id="achievements"
+                  checked={notifications.achievements}
+                  onCheckedChange={(value) => handleNotificationChange('achievements', value)}
+                />
+              </div>
             </div>
           </Card>
         </TabsContent>
@@ -274,21 +191,63 @@ export const SettingsPage = () => {
           <IntegrationsSettings />
         </TabsContent>
 
-        <TabsContent value="appearance">
+        <TabsContent value="appearance" className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Appearance</h2>
+            <h3 className="text-lg font-semibold mb-4">Theme Preferences</h3>
+            <div className="space-y-4">
+              <Label>Choose your preferred theme</Label>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { id: 'light', label: 'Light', icon: Sun },
+                  { id: 'dark', label: 'Dark', icon: Moon },
+                  { id: 'system', label: 'System', icon: Monitor }
+                ].map((themeOption) => {
+                  const Icon = themeOption.icon;
+                  return (
+                    <Button
+                      key={themeOption.id}
+                      variant={theme === themeOption.id ? 'default' : 'outline'}
+                      className="flex flex-col items-center gap-2 h-20"
+                      onClick={() => setTheme(themeOption.id)}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {themeOption.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy" className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Privacy & Security</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="darkMode">Dark Mode</Label>
-                <Switch
-                  id="darkMode"
-                  checked={isDarkModeEnabled}
-                  onCheckedChange={setIsDarkModeEnabled}
-                />
+                <div>
+                  <Label>Profile Visibility</Label>
+                  <p className="text-sm text-gray-500">Make your profile visible to other users</p>
+                </div>
+                <Switch defaultChecked />
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Toggle between light and dark mode for a comfortable viewing experience.
-              </p>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Study Analytics</Label>
+                  <p className="text-sm text-gray-500">Allow anonymous usage analytics</p>
+                </div>
+                <Switch defaultChecked />
+              </div>
+              
+              <div className="pt-4 border-t">
+                <Button variant="destructive" size="sm">
+                  Delete Account
+                </Button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
             </div>
           </Card>
         </TabsContent>

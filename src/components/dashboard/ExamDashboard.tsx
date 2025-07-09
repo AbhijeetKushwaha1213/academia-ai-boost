@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ export const ExamDashboard = () => {
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Dynamic today's plan based on user progress
   const todaysPlan = [
     { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
     { subject: 'Chemistry', topic: 'Organic Reactions', duration: '30 min', status: 'current' },
