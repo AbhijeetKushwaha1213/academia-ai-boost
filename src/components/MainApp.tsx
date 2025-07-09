@@ -119,7 +119,7 @@ export const MainApp = () => {
     return (
       <ErrorBoundary>
         <OnboardingFlow />
-      </ErrorBoundary>
+       </ErrorBoundary>
     );
   }
 
