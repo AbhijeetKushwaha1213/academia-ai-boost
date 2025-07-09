@@ -27,14 +27,11 @@ export const useChatHistory = () => {
   const {
     data: chatSessions = [],
     isLoading,
-    error,
-    refetch
+    error
   } = useQuery({
     queryKey: ['chat_sessions', user?.user_id],
     queryFn: async () => {
       if (!user?.user_id) return [];
-      
-      console.log('Fetching chat sessions for user:', user.user_id);
       
       const { data, error } = await supabase
         .from('chat_sessions')
@@ -46,8 +43,6 @@ export const useChatHistory = () => {
         console.error('Error fetching chat sessions:', error);
         throw error;
       }
-
-      console.log('Raw chat sessions data:', data);
 
       // Transform the data to match our ChatSession interface
       return (data || []).map(session => {
@@ -88,21 +83,12 @@ export const useChatHistory = () => {
     mutationFn: async (sessionData: Omit<ChatSession, 'id' | 'created_at' | 'updated_at'>) => {
       if (!user?.user_id) throw new Error('User not authenticated');
 
-      console.log('Saving chat session:', sessionData);
-      
-      // Ensure messages are in correct format
-      const formattedMessages = sessionData.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp || new Date().toISOString()
-      }));
-
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert([{
           title: sessionData.title,
           topic: sessionData.topic,
-          messages: formattedMessages,
+          messages: sessionData.messages,
           user_id: user.user_id,
         }])
         .select()
@@ -112,21 +98,19 @@ export const useChatHistory = () => {
         console.error('Error saving chat session:', error);
         throw error;
       }
-      
-      console.log('Chat session saved successfully:', data);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
       toast({
-        title: "Chat Saved ✅",
-        description: "Your conversation has been saved successfully.",
+        title: "Chat Saved",
+        description: "Your chat session has been saved successfully.",
       });
     },
     onError: (error) => {
       console.error('Error saving chat session:', error);
       toast({
-        title: "Save Failed ❌",
+        title: "Error",
         description: "Failed to save chat session. Please try again.",
         variant: "destructive",
       });
@@ -136,82 +120,41 @@ export const useChatHistory = () => {
   // Update chat session
   const updateChatSession = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<ChatSession> }) => {
-      console.log('Updating chat session:', id, updates);
-      
-      const updateData: any = {};
-      if (updates.title) updateData.title = updates.title;
-      if (updates.topic) updateData.topic = updates.topic;
-      if (updates.messages) {
-        updateData.messages = updates.messages.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp || new Date().toISOString()
-        }));
-      }
-      updateData.updated_at = new Date().toISOString();
-
       const { data, error } = await supabase
         .from('chat_sessions')
-        .update(updateData)
+        .update({
+          title: updates.title,
+          topic: updates.topic,
+          messages: updates.messages,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) {
-        console.error('Error updating chat session:', error);
-        throw error;
-      }
-      
-      console.log('Chat session updated successfully:', data);
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
-      toast({
-        title: "Chat Updated ✅",
-        description: "Your conversation has been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating chat session:', error);
-      toast({
-        title: "Update Failed ❌",
-        description: "Failed to update chat session. Please try again.",
-        variant: "destructive",
-      });
     },
   });
 
   // Delete chat session
   const deleteChatSession = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting chat session:', id);
-      
       const { error } = await supabase
         .from('chat_sessions')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting chat session:', error);
-        throw error;
-      }
-      
-      console.log('Chat session deleted successfully');
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
       toast({
-        title: "Chat Deleted ✅",
+        title: "Chat Deleted",
         description: "Chat session has been removed successfully.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error deleting chat session:', error);
-      toast({
-        title: "Delete Failed ❌",
-        description: "Failed to delete chat session. Please try again.",
-        variant: "destructive",
       });
     },
   });
@@ -226,6 +169,5 @@ export const useChatHistory = () => {
     isSaving: saveChatSession.isPending,
     isUpdating: updateChatSession.isPending,
     isDeleting: deleteChatSession.isPending,
-    refetchSessions: refetch
   };
 };

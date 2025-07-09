@@ -113,14 +113,9 @@ export const MainApp = () => {
     );
   }
 
-  // Authenticated but no user type selected OR missing required onboarding data - show onboarding flow
-  if (!user?.userType || !user?.name || (user.userType === 'exam' && !user.examType) || (user.userType === 'college' && !user.college)) {
-    console.log('MainApp: User needs onboarding, showing OnboardingFlow. User data:', {
-      userType: user?.userType,
-      name: user?.name,
-      examType: user?.examType,
-      college: user?.college
-    });
+  // Authenticated but no user type selected - show onboarding flow
+  if (!user?.userType) {
+    console.log('MainApp: User authenticated but no userType, showing OnboardingFlow');
     return (
       <ErrorBoundary>
         <OnboardingFlow />
