@@ -33,6 +33,8 @@ export const useChatHistory = () => {
     queryFn: async () => {
       if (!user?.user_id) return [];
       
+      console.log('Fetching chat sessions for user:', user.user_id);
+      
       const { data, error } = await supabase
         .from('chat_sessions')
         .select('*')
@@ -43,6 +45,8 @@ export const useChatHistory = () => {
         console.error('Error fetching chat sessions:', error);
         throw error;
       }
+
+      console.log('Fetched chat sessions:', data);
 
       // Transform the data to match our ChatSession interface
       return (data || []).map(session => {
@@ -81,7 +85,11 @@ export const useChatHistory = () => {
   // Save chat session
   const saveChatSession = useMutation({
     mutationFn: async (sessionData: Omit<ChatSession, 'id' | 'created_at' | 'updated_at'>) => {
-      if (!user?.user_id) throw new Error('User not authenticated');
+      if (!user?.user_id) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Saving chat session:', sessionData);
 
       const { data, error } = await supabase
         .from('chat_sessions')
@@ -98,19 +106,21 @@ export const useChatHistory = () => {
         console.error('Error saving chat session:', error);
         throw error;
       }
+
+      console.log('Chat session saved successfully:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
       toast({
-        title: "Chat Saved",
-        description: "Your chat session has been saved successfully.",
+        title: "Chat Saved ✅",
+        description: "Your conversation has been saved successfully.",
       });
     },
     onError: (error) => {
       console.error('Error saving chat session:', error);
       toast({
-        title: "Error",
+        title: "Save Failed ❌",
         description: "Failed to save chat session. Please try again.",
         variant: "destructive",
       });
@@ -120,6 +130,8 @@ export const useChatHistory = () => {
   // Update chat session
   const updateChatSession = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<ChatSession> }) => {
+      console.log('Updating chat session:', id, updates);
+
       const { data, error } = await supabase
         .from('chat_sessions')
         .update({
@@ -132,29 +144,61 @@ export const useChatHistory = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating chat session:', error);
+        throw error;
+      }
+
+      console.log('Chat session updated successfully:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
+      toast({
+        title: "Chat Updated ✅",
+        description: "Your conversation has been updated.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating chat session:', error);
+      toast({
+        title: "Update Failed ❌",
+        description: "Failed to update chat session.",
+        variant: "destructive",
+      });
     },
   });
 
   // Delete chat session
   const deleteChatSession = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting chat session:', id);
+
       const { error } = await supabase
         .from('chat_sessions')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting chat session:', error);
+        throw error;
+      }
+
+      console.log('Chat session deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat_sessions'] });
       toast({
-        title: "Chat Deleted",
+        title: "Chat Deleted ✅",
         description: "Chat session has been removed successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting chat session:', error);
+      toast({
+        title: "Delete Failed ❌",
+        description: "Failed to delete chat session.",
+        variant: "destructive",
       });
     },
   });

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -24,6 +25,7 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
       setUser(session?.user ?? null);
       
       if (session?.user) {
@@ -39,6 +41,8 @@ export const useAuth = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -50,6 +54,7 @@ export const useAuth = () => {
         return;
       }
 
+      console.log('User profile data:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -57,9 +62,13 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('No authenticated user');
+    }
 
     try {
+      console.log('Updating profile with:', updates);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert({
@@ -71,8 +80,12 @@ export const useAuth = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
 
+      console.log('Profile updated successfully:', data);
       setProfile(data);
       return data;
     } catch (error) {
@@ -82,7 +95,14 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
   };
 
   return {

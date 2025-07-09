@@ -1,11 +1,14 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { Upload, Camera, FileText, Trash2, Check, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const ProfileUpload: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
   const { uploading, uploadProgress, uploadFile, deleteFile, getUserFiles } = useFileUpload();
+  const { toast } = useToast();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -20,8 +23,12 @@ const ProfileUpload: React.FC = () => {
   }, [profile]);
 
   const loadUserFiles = async () => {
-    const files = await getUserFiles('document');
-    setDocuments(files);
+    try {
+      const files = await getUserFiles('document');
+      setDocuments(files);
+    } catch (error) {
+      console.error('Error loading user files:', error);
+    }
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,28 +38,48 @@ const ProfileUpload: React.FC = () => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setUploadStatus('error');
-      alert('Please select an image file');
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file (JPG, PNG, GIF).",
+        variant: "destructive",
+      });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setUploadStatus('error');
-      alert('File size must be less than 5MB');
+      toast({
+        title: "File Too Large",
+        description: "Image must be smaller than 5MB.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
+      console.log('Uploading avatar file:', file.name);
       const result = await uploadFile(file, 'avatars', 'avatar');
+      console.log('Avatar upload result:', result);
+      
       await updateProfile({ avatar_url: result.url });
       setAvatarPreview(result.url);
       setUploadStatus('success');
+      
+      toast({
+        title: "Avatar Updated! 🎉",
+        description: "Your profile picture has been updated successfully.",
+      });
       
       setTimeout(() => setUploadStatus('idle'), 3000);
     } catch (error) {
       console.error('Avatar upload error:', error);
       setUploadStatus('error');
-      alert('Failed to upload avatar. Please try again.');
+      toast({
+        title: "Upload Failed ❌",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -63,27 +90,47 @@ const ProfileUpload: React.FC = () => {
     // Validate file type
     if (file.type !== 'application/pdf') {
       setUploadStatus('error');
-      alert('Please select a PDF file');
+      toast({
+        title: "Invalid File Type",
+        description: "Please select a PDF file.",
+        variant: "destructive",
+      });
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadStatus('error');
-      alert('File size must be less than 10MB');
+      toast({
+        title: "File Too Large",
+        description: "PDF must be smaller than 10MB.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
+      console.log('Uploading document file:', file.name);
       const result = await uploadFile(file, 'documents');
+      console.log('Document upload result:', result);
+      
       await loadUserFiles();
       setUploadStatus('success');
+      
+      toast({
+        title: "Document Uploaded! 📄",
+        description: "Your PDF has been uploaded successfully.",
+      });
       
       setTimeout(() => setUploadStatus('idle'), 3000);
     } catch (error) {
       console.error('Document upload error:', error);
       setUploadStatus('error');
-      alert('Failed to upload document. Please try again.');
+      toast({
+        title: "Upload Failed ❌",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -93,11 +140,21 @@ const ProfileUpload: React.FC = () => {
     }
 
     try {
+      console.log('Deleting document:', document.file_path);
       await deleteFile(document.file_path, 'documents');
       await loadUserFiles();
+      
+      toast({
+        title: "Document Deleted ✅",
+        description: "Document has been removed successfully.",
+      });
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete document. Please try again.');
+      toast({
+        title: "Delete Failed ❌",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -121,15 +178,15 @@ const ProfileUpload: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-8">
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg space-y-8">
+      <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile & Files</h2>
         <p className="text-gray-600">Upload your profile picture and documents</p>
       </div>
 
       {/* Upload Status */}
       {uploadStatus !== 'idle' && (
-        <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
+        <div className={`p-4 rounded-lg flex items-center gap-2 ${
           uploadStatus === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
         }`}>
           {getStatusIcon()}
@@ -140,12 +197,12 @@ const ProfileUpload: React.FC = () => {
       )}
 
       {/* Avatar Upload */}
-      <div className="mb-8">
+      <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
         
         <div className="flex items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
               {avatarPreview ? (
                 <img
                   src={avatarPreview}
@@ -185,14 +242,14 @@ const ProfileUpload: React.FC = () => {
             </button>
             
             <p className="text-sm text-gray-500 mt-2">
-              PNG, JPG up to 5MB
+              JPG, PNG, GIF up to 5MB
             </p>
           </div>
         </div>
       </div>
 
       {/* Document Upload */}
-      <div>
+      <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
         
         <div className="mb-6">
@@ -221,11 +278,11 @@ const ProfileUpload: React.FC = () => {
         {/* Document List */}
         {documents.length > 0 && (
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">Uploaded Documents</h4>
+            <h4 className="font-medium text-gray-900">Uploaded Documents ({documents.length})</h4>
             {documents.map((document) => (
               <div
                 key={document.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-white rounded-lg border"
               >
                 <div className="flex items-center gap-3">
                   <FileText className="h-5 w-5 text-red-500" />
@@ -240,24 +297,31 @@ const ProfileUpload: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      const { data } = supabase.storage
-                        .from('documents')
-                        .getPublicUrl(document.file_path);
-                      window.open(data.publicUrl, '_blank');
+                      // Create a proper URL for viewing the document
+                      const fileUrl = `https://cmcbkatdyhunlvlktwlv.supabase.co/storage/v1/object/public/documents/${document.file_path}`;
+                      window.open(fileUrl, '_blank');
                     }}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50"
                   >
                     View
                   </button>
                   <button
                     onClick={() => handleDeleteDocument(document)}
-                    className="text-red-600 hover:text-red-800 p-1 rounded"
+                    className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {documents.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No documents uploaded yet</p>
+            <p className="text-sm">Upload your first PDF to get started</p>
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
@@ -7,10 +8,15 @@ import ProfileUpload from '../profile/ProfileUpload';
 const AppLayout: React.FC = () => {
   const { user, profile, loading } = useAuth();
 
+  console.log('AppLayout render - User:', user?.email, 'Profile:', profile, 'Loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -19,21 +25,22 @@ const AppLayout: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Study Assistant</h1>
-          <p className="text-gray-600 mb-6">Please sign in to continue</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to StudyMate AI</h1>
+          <p className="text-gray-600 mb-6">Your intelligent study companion</p>
           <button
-            onClick={() => window.location.href = '/login'}
+            onClick={() => window.location.href = '/'}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Sign In
+            Get Started
           </button>
         </div>
       </div>
     );
   }
 
-  // Show onboarding if user hasn't completed it
-  if (!profile?.onboarding_completed) {
+  // Show onboarding if user hasn't completed it or profile is missing
+  if (!profile || !profile.onboarding_completed) {
+    console.log('Showing onboarding - Profile missing or incomplete:', { profile });
     return <OnboardingFlow />;
   }
 
@@ -44,13 +51,13 @@ const AppLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl font-bold text-gray-900">Study Assistant</h1>
-              <div className="flex items-center gap-6">
+              <h1 className="text-xl font-bold text-gray-900">StudyMate AI</h1>
+              <div className="hidden md:flex items-center gap-6">
                 <button
                   onClick={() => window.location.href = '/chat'}
                   className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
                 >
-                  Chat
+                  AI Chat
                 </button>
                 <button
                   onClick={() => window.location.href = '/profile'}
@@ -73,7 +80,14 @@ const AppLayout: React.FC = () => {
                 />
               )}
               <button
-                onClick={() => window.location.href = '/logout'}
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
+                  } catch (error) {
+                    console.error('Sign out error:', error);
+                  }
+                }}
                 className="text-gray-700 hover:text-red-600 font-medium transition-colors"
               >
                 Sign Out
@@ -92,7 +106,7 @@ const AppLayout: React.FC = () => {
         {window.location.pathname === '/' && (
           <div className="text-center py-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Welcome to your Study Assistant
+              Welcome to StudyMate AI! 🎓
             </h2>
             <p className="text-gray-600 mb-8">
               {profile?.mode === 'college' 
@@ -105,13 +119,13 @@ const AppLayout: React.FC = () => {
                 onClick={() => window.location.href = '/chat'}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Start Chatting
+                🤖 Start AI Chat
               </button>
               <button
                 onClick={() => window.location.href = '/profile'}
                 className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
               >
-                Manage Profile
+                👤 Manage Profile
               </button>
             </div>
           </div>
