@@ -92,24 +92,28 @@ export const useAuth = () => {
     try {
       console.log('Updating profile with:', updates);
       
-      // Prepare data for database - ensure user_type is string and required fields are present
+      // Prepare data for database with proper typing
       const updateData = {
         user_id: user.id,
         email: user.email!,
         name: updates.name || profile?.name || user.email!.split('@')[0],
         user_type: updates.user_type || profile?.user_type || 'exam',
-        ...updates,
+        avatar: updates.avatar || profile?.avatar,
+        branch: updates.branch || profile?.branch,
+        college: updates.college || profile?.college,
+        semester: updates.semester || profile?.semester,
+        exam_date: updates.exam_date || profile?.exam_date,
+        exam_type: updates.exam_type || profile?.exam_type,
+        study_streak: updates.study_streak || profile?.study_streak || 0,
+        total_study_hours: updates.total_study_hours || profile?.total_study_hours || 0,
+        current_level: updates.current_level || profile?.current_level || 1,
+        experience_points: updates.experience_points || profile?.experience_points || 0,
         updated_at: new Date().toISOString()
       };
 
-      // Remove undefined values and id field
-      const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([key, value]) => key !== 'id' && value !== undefined)
-      );
-
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert(cleanedData)
+        .upsert(updateData)
         .select()
         .single();
 

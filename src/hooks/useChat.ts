@@ -25,7 +25,19 @@ export const useChat = () => {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      // Convert database sessions to ChatSession format
+      const chatSessions: ChatSession[] = (data || []).map(session => ({
+        id: session.id,
+        user_id: session.user_id,
+        title: session.title,
+        topic: session.topic,
+        created_at: session.created_at,
+        updated_at: session.updated_at,
+        messages: Array.isArray(session.messages) ? session.messages as ChatMessage[] : []
+      }));
+      
+      setSessions(chatSessions);
     } catch (err) {
       console.error('Error loading sessions:', err);
       setError('Failed to load chat sessions');
@@ -47,7 +59,7 @@ export const useChat = () => {
       
       // Safely cast messages from JSON
       const sessionMessages = Array.isArray(data?.messages) 
-        ? (data.messages as unknown as ChatMessage[]) 
+        ? (data.messages as ChatMessage[]) 
         : [];
       setMessages(sessionMessages);
     } catch (err) {
@@ -88,7 +100,17 @@ export const useChat = () => {
 
       if (error) throw error;
       
-      const newSession = data as ChatSession;
+      // Convert to ChatSession format
+      const newSession: ChatSession = {
+        id: data.id,
+        user_id: data.user_id,
+        title: data.title,
+        topic: data.topic,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        messages: []
+      };
+      
       setSessions(prev => [newSession, ...prev]);
       setCurrentSession(newSession);
       setMessages([]);
@@ -120,11 +142,11 @@ export const useChat = () => {
     setMessages(updatedMessages);
 
     try {
-      // Update session with new messages - cast to unknown first to avoid type issues
+      // Update session with new messages
       const { error } = await supabase
         .from('chat_sessions')
         .update({
-          messages: updatedMessages as unknown as any,
+          messages: updatedMessages as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentSession.id);

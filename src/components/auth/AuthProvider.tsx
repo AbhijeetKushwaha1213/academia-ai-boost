@@ -78,24 +78,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No authenticated user');
 
-      // Prepare data for database
+      // Prepare data for database with proper typing
       const updateData = {
         user_id: authUser.id,
         email: authUser.email!,
         name: updates.name || user.name || authUser.email!.split('@')[0],
         user_type: updates.user_type || user.user_type || 'exam',
-        ...updates,
+        avatar: updates.avatar || user.avatar,
+        branch: updates.branch || user.branch,
+        college: updates.college || user.college,
+        semester: updates.semester || user.semester,
+        exam_date: updates.exam_date || user.exam_date,
+        exam_type: updates.exam_type || user.exam_type,
+        study_streak: updates.study_streak || user.study_streak || 0,
+        total_study_hours: updates.total_study_hours || user.total_study_hours || 0,
+        current_level: updates.current_level || user.current_level || 1,
+        experience_points: updates.experience_points || user.experience_points || 0,
         updated_at: new Date().toISOString()
       };
 
-      // Remove undefined values and id field
-      const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([key, value]) => key !== 'id' && value !== undefined)
-      );
-
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert(cleanedData)
+        .upsert(updateData)
         .select()
         .single();
 
