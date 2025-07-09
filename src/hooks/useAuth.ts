@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '../types/user';
 
 export const useAuth = () => {
@@ -54,8 +54,31 @@ export const useAuth = () => {
         return;
       }
 
-      console.log('User profile data:', data);
-      setProfile(data);
+      if (data) {
+        // Map database fields to UserProfile interface
+        const userProfile: UserProfile = {
+          id: data.id,
+          user_id: data.user_id,
+          name: data.name,
+          email: data.email,
+          user_type: data.user_type === 'college' ? 'college' : 'exam',
+          exam_type: data.exam_type || undefined,
+          college: data.college || undefined,
+          branch: data.branch || undefined,
+          semester: data.semester || undefined,
+          exam_date: data.exam_date || undefined,
+          study_streak: data.study_streak || 0,
+          total_study_hours: data.total_study_hours || 0,
+          current_level: data.current_level || 1,
+          experience_points: data.experience_points || 0,
+          avatar: data.avatar || undefined,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+        
+        console.log('User profile data:', userProfile);
+        setProfile(userProfile);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -86,7 +109,7 @@ export const useAuth = () => {
       }
 
       console.log('Profile updated successfully:', data);
-      setProfile(data);
+      await fetchUserProfile(user.id); // Refetch to get updated data
       return data;
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -106,7 +129,7 @@ export const useAuth = () => {
   };
 
   return {
-    user,
+    user: profile, // Return the profile as user for backward compatibility
     profile,
     loading,
     updateProfile,

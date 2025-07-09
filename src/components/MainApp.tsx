@@ -24,7 +24,7 @@ export const MainApp = () => {
     isAuthenticated, 
     isLoading, 
     user: user?.id, 
-    userType: user?.userType,
+    userType: user?.user_type,
     activeTab 
   });
 
@@ -114,8 +114,8 @@ export const MainApp = () => {
   }
 
   // Authenticated but no user type selected - show onboarding flow
-  if (!user?.userType) {
-    console.log('MainApp: User authenticated but no userType, showing OnboardingFlow');
+  if (!user?.user_type) {
+    console.log('MainApp: User authenticated but no user_type, showing OnboardingFlow');
     return (
       <ErrorBoundary>
         <OnboardingFlow />

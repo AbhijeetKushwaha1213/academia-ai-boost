@@ -1,14 +1,20 @@
+
 export interface UserProfile {
   id: string;
+  user_id: string;
+  name: string;
   email: string;
-  full_name?: string;
-  avatar_url?: string;
-  mode?: 'college' | 'exam_preparation';
+  user_type: 'exam' | 'college';
+  exam_type?: string;
+  college?: string;
+  branch?: string;
   semester?: number;
-  college_name?: string;
-  target_exam?: string;
-  attempt_year?: number;
-  onboarding_completed?: boolean;
+  exam_date?: string;
+  study_streak: number;
+  total_study_hours: number;
+  current_level: number;
+  experience_points: number;
+  avatar?: string;
   created_at?: string;
   updated_at?: string;
 }

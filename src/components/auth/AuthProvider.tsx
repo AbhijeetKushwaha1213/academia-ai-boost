@@ -1,25 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-
-interface UserProfile {
-  id: string;
-  user_id: string;
-  name: string;
-  email: string;
-  userType: 'exam' | 'college';
-  examType?: string;
-  college?: string;
-  branch?: string;
-  semester?: number;
-  examDate?: string;
-  study_streak: number;
-  total_study_hours: number;
-  current_level: number;
-  experience_points: number;
-  avatar?: string;
-}
+import { UserProfile } from '@/types/user';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -54,26 +38,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
-        // Ensure user_type is properly typed
-        const userType = data.user_type === 'college' ? 'college' : 'exam';
-        
-        setUser({
+        // Map database fields to UserProfile interface
+        const userProfile: UserProfile = {
           id: data.id,
           user_id: data.user_id,
           name: data.name,
           email: data.email,
-          userType: userType,
-          examType: data.exam_type || undefined,
+          user_type: data.user_type === 'college' ? 'college' : 'exam',
+          exam_type: data.exam_type || undefined,
           college: data.college || undefined,
           branch: data.branch || undefined,
           semester: data.semester || undefined,
-          examDate: data.exam_date || undefined,
+          exam_date: data.exam_date || undefined,
           study_streak: data.study_streak || 0,
           total_study_hours: data.total_study_hours || 0,
           current_level: data.current_level || 1,
           experience_points: data.experience_points || 0,
-          avatar: data.avatar || undefined
-        });
+          avatar: data.avatar || undefined,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+        
+        setUser(userProfile);
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -249,12 +235,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         ...user,
         name: details.name || user.name,
-        userType: type,
-        examType: details.examType,
+        user_type: type,
+        exam_type: details.examType,
         college: details.college,
         branch: details.course,
         semester: details.semester,
-        examDate: details.examDate,
+        exam_date: details.examDate,
       });
 
       toast({
