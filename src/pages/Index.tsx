@@ -1,19 +1,17 @@
 
 import React from 'react';
-import { Hero } from '../components/Hero';
-import { Features } from '../components/Features';
-import { Dashboard } from '../components/Dashboard';
-import { StudyProgress } from '../components/StudyProgress';
-import { AIAssistant } from '../components/AIAssistant';
+import { Hero } from '../components/landing/Hero';
+import { Features } from '../components/landing/Features';
+import { TrustSection } from '../components/landing/TrustSection';
+import { Footer } from '../components/landing/Footer';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <Hero />
       <Features />
-      <Dashboard />
-      <StudyProgress />
-      <AIAssistant />
+      <TrustSection />
+      <Footer />
     </div>
   );
 };
