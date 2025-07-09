@@ -97,6 +97,7 @@ export const useAuth = () => {
         .upsert({
           user_id: user.id,
           email: user.email!,
+          name: updates.name || profile?.name || user.email!.split('@')[0],
           ...updates,
           updated_at: new Date().toISOString()
         })

@@ -1,316 +1,216 @@
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthProvider';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '../auth/AuthProvider';
-import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap, Plus, Lightbulb, ClipboardList, BarChart3, Trash2, RotateCcw } from 'lucide-react';
-import { StudySessionPage } from '../session/StudySessionPage';
-import { StudyPlanPage } from '../planner/StudyPlanPage';
-import { MockTestScheduler } from '../exam/MockTestScheduler';
-import { TestResultsViewer } from '../exam/TestResultsViewer';
-import { RevisionLogManager } from '../exam/RevisionLogManager';
-import { TrackerDeleteManager } from '../exam/TrackerDeleteManager';
+import { Calendar, Clock, Target, TrendingUp, BookOpen, Users, Award, Zap } from 'lucide-react';
 
 export const ExamDashboard = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'session' | 'plan'>('dashboard');
-  const [mockTestOpen, setMockTestOpen] = useState(false);
-  const [resultsOpen, setResultsOpen] = useState(false);
-  const [revisionOpen, setRevisionOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [studyStreak, setStudyStreak] = useState(0);
+  const [todayStudyHours, setTodayStudyHours] = useState(0);
+  const [weeklyProgress, setWeeklyProgress] = useState(0);
 
-  // Dynamic today's plan based on user progress
-  const todaysPlan = [
-    { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
-    { subject: 'Chemistry', topic: 'Organic Reactions', duration: '30 min', status: 'current' },
-    { subject: 'Math', topic: 'Calculus Practice', duration: '60 min', status: 'pending' }
+  useEffect(() => {
+    // Simulate loading user data
+    setStudyStreak(user?.study_streak || 0);
+    setTodayStudyHours(2.5);
+    setWeeklyProgress(68);
+  }, [user]);
+
+  const calculateDaysToExam = () => {
+    if (!user?.exam_date) return null;
+    const examDate = new Date(user.exam_date);
+    const today = new Date();
+    const diffTime = examDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const daysToExam = calculateDaysToExam();
+
+  const quickActions = [
+    { icon: BookOpen, label: 'Study Session', action: 'study' },
+    { icon: Target, label: 'Practice Test', action: 'test' },
+    { icon: Calendar, label: 'Schedule', action: 'schedule' },
+    { icon: Users, label: 'Study Group', action: 'group' }
   ];
 
-  const handleStartNextSession = () => {
-    console.log('Starting next study session...');
-    setCurrentView('session');
-    toast({
-      title: "Session Started! 🚀",
-      description: "Your Chemistry - Organic Reactions session has begun. Focus and give your best!",
-    });
-  };
-
-  const handleViewStudyPlan = () => {
-    console.log('Viewing study plan...');
-    setCurrentView('plan');
-    toast({
-      title: "Study Plan Loaded 📚",
-      description: "Your personalized study plan is now open.",
-    });
-  };
-
-  const handleScheduleMockTest = () => {
-    setMockTestOpen(true);
-  };
-
-  const handleViewResults = () => {
-    setResultsOpen(true);
-  };
-
-  const handleDeleteTracker = () => {
-    setDeleteOpen(true);
-  };
-
-  const handleRevisionLog = () => {
-    setRevisionOpen(true);
-  };
-
-  const handleBackToDashboard = () => {
-    setCurrentView('dashboard');
-  };
-
-  // Generate AI recommendation based on user data
-  const getAIRecommendation = () => {
-    const currentSubject = todaysPlan.find(item => item.status === 'current');
-    const completedCount = todaysPlan.filter(item => item.status === 'completed').length;
-    const totalCount = todaysPlan.length;
-    
-    if (completedCount === totalCount) {
-      return {
-        title: "Excellent Progress! 🎉",
-        message: "You've completed all today's topics. Consider reviewing weak areas or starting tomorrow's topics.",
-        action: "Review Weak Topics"
-      };
-    } else if (currentSubject) {
-      return {
-        title: "Focus on Current Topic 🎯",
-        message: `You're currently working on ${currentSubject.subject} - ${currentSubject.topic}. Based on your performance, spend extra time on problem-solving.`,
-        action: "View Study Materials"
-      };
-    } else {
-      return {
-        title: "Ready for Next Challenge 💪",
-        message: "Start with your pending Math topic. Your calculus foundation is strong, so focus on advanced integration techniques.",
-        action: "Start Math Session"
-      };
-    }
-  };
-
-  const aiRec = getAIRecommendation();
-
-  if (currentView === 'session') {
-    return (
-      <StudySessionPage 
-        subject="Chemistry" 
-        topic="Organic Reactions" 
-        onBack={handleBackToDashboard}
-      />
-    );
-  }
-
-  if (currentView === 'plan') {
-    return <StudyPlanPage onBack={handleBackToDashboard} />;
-  }
+  const recentActivity = [
+    { subject: 'Mathematics', time: '2 hours ago', score: 85, type: 'Practice Test' },
+    { subject: 'Physics', time: '1 day ago', score: 92, type: 'Flashcards' },
+    { subject: 'Chemistry', time: '2 days ago', score: 78, type: 'Study Session' }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <Card className="p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Good morning, {user?.name || 'Student'}! 🎯</h2>
-            <p className="text-indigo-100">Day 47 of your {user?.examType || 'JEE'} preparation journey</p>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">87%</div>
-            <div className="text-indigo-200 text-sm">Syllabus Complete</div>
-          </div>
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome back, {user?.name}! 🎯
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Preparing for {user?.exam_type || 'your exam'} {daysToExam && `• ${daysToExam} days to go`}
+          </p>
         </div>
-      </Card>
+        <div className="flex items-center gap-2 mt-4 sm:mt-0">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Zap className="w-3 h-3" />
+            Level {user?.current_level || 1}
+          </Badge>
+          <Badge variant="outline">
+            {user?.experience_points || 0} XP
+          </Badge>
+        </div>
+      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
-          <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <Flame className="w-5 h-5 text-orange-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">47</div>
-          <div className="text-sm text-gray-600">Day Streak</div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Days to Exam</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {daysToExam || 'Not set'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {user?.exam_date ? new Date(user.exam_date).toLocaleDateString() : 'Set exam date'}
+            </p>
+          </CardContent>
         </Card>
 
-        <Card className="p-4 text-center">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">4.5h</div>
-          <div className="text-sm text-gray-600">Today</div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Study Streak</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {studyStreak} days
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Keep it going! 🔥
+            </p>
+          </CardContent>
         </Card>
 
-        <Card className="p-4 text-center">
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <Target className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">15</div>
-          <div className="text-sm text-gray-600">Topics Left</div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today's Study</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {todayStudyHours}h
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Target: 4h daily
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Weekly Progress</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {weeklyProgress}%
+            </div>
+            <Progress value={weeklyProgress} className="mt-2" />
+          </CardContent>
         </Card>
       </div>
 
-      {/* Today's Plan */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Today's Study Plan</h3>
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">On Track</Badge>
-        </div>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Start your study session or track your progress
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="h-auto flex-col gap-2 p-4"
+                  onClick={() => console.log(`Action: ${action.action}`)}
+                >
+                  <Icon className="h-6 w-6" />
+                  <span className="text-sm">{action.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-3">
-          {todaysPlan.map((item, index) => (
-            <div key={index} className={`flex items-center p-3 rounded-lg border ${
-              item.status === 'completed' ? 'bg-green-50 border-green-200' :
-              item.status === 'current' ? 'bg-blue-50 border-blue-200' :
-              'bg-gray-50 border-gray-200'
-            }`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                item.status === 'completed' ? 'bg-green-500' :
-                item.status === 'current' ? 'bg-blue-500' :
-                'bg-gray-400'
-              }`}>
-                <BookOpen className="w-4 h-4 text-white" />
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Your latest study sessions and practice tests
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium">{activity.subject}</div>
+                    <div className="text-sm text-gray-500">{activity.type} • {activity.time}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={activity.score >= 80 ? "default" : "secondary"}>
+                    {activity.score}%
+                  </Badge>
+                  <Award className="h-4 w-4 text-gray-400" />
+                </div>
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-900">{item.subject} - {item.topic}</h4>
-                <p className="text-sm text-gray-600">{item.duration}</p>
-              </div>
-              <Badge variant={
-                item.status === 'completed' ? 'secondary' :
-                item.status === 'current' ? 'default' : 'outline'
-              }>
-                {item.status === 'completed' ? 'Done' :
-                 item.status === 'current' ? 'Current' : 'Pending'}
-              </Badge>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <Button 
-            className="bg-indigo-600 hover:bg-indigo-700"
-            onClick={handleStartNextSession}
-          >
-            <Zap className="w-4 h-4 mr-2" />
-            Start Next Session
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleViewStudyPlan}
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            View Study Plan
-          </Button>
-        </div>
+            ))}
+          </div>
+        </CardContent>
       </Card>
 
-      {/* Progress Overview */}
-      <Card className="p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Subject Progress</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Physics</span>
-              <span className="font-medium">85%</span>
-            </div>
-            <Progress value={85} className="h-2" />
+      {/* Study Plan Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Study Plan Progress</CardTitle>
+          <CardDescription>
+            Track your progress across different subjects
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {['Mathematics', 'Physics', 'Chemistry', 'Biology'].map((subject, index) => {
+              const progress = [75, 60, 85, 45][index];
+              return (
+                <div key={subject} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{subject}</span>
+                    <span className="text-sm text-gray-500">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </div>
+              );
+            })}
           </div>
-
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Chemistry</span>
-              <span className="font-medium">78%</span>
-            </div>
-            <Progress value={78} className="h-2" />
-          </div>
-
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Mathematics</span>
-              <span className="font-medium">92%</span>
-            </div>
-            <Progress value={92} className="h-2" />
-          </div>
-        </div>
+        </CardContent>
       </Card>
-
-      {/* Exam-Focused Tools Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Mock Tests & Results</h3>
-          <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={handleScheduleMockTest}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Schedule Mock Test
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={handleViewResults}
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              View Test Results
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Study Management</h3>
-          <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={handleRevisionLog}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Revision Log
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50"
-              onClick={handleDeleteTracker}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Tracker
-            </Button>
-          </div>
-        </Card>
-      </div>
-
-      {/* AI Recommendation */}
-      <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
-        <div className="flex items-start space-x-3">
-          <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-bold text-gray-900 mb-2">{aiRec.title}</h4>
-            <p className="text-gray-700 mb-3">{aiRec.message}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-700 border-purple-300"
-              onClick={handleViewStudyPlan}
-            >
-              {aiRec.action}
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Modals */}
-      <MockTestScheduler open={mockTestOpen} onOpenChange={setMockTestOpen} />
-      <TestResultsViewer open={resultsOpen} onOpenChange={setResultsOpen} />
-      <RevisionLogManager open={revisionOpen} onOpenChange={setRevisionOpen} />
-      <TrackerDeleteManager open={deleteOpen} onOpenChange={setDeleteOpen} />
     </div>
   );
 };

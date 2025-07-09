@@ -32,7 +32,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
     
     switch (activeTab) {
       case 'home':
-        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
+        return user?.user_type === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
       case 'flashcards':
         return <FlashcardVault />;
       case 'ai':
@@ -53,7 +53,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
         return <DiscoverResources onNavigate={handleNavigate} />;
       default:
         console.log('ContentRenderer: Unknown tab, rendering default dashboard');
-        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
+        return user?.user_type === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
     }
   };
 
