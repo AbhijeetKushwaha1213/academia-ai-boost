@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -34,7 +33,7 @@ export const useChat = () => {
         topic: session.topic,
         created_at: session.created_at,
         updated_at: session.updated_at,
-        messages: Array.isArray(session.messages) ? session.messages as ChatMessage[] : []
+        messages: Array.isArray(session.messages) ? (session.messages as unknown as ChatMessage[]) : []
       }));
       
       setSessions(chatSessions);
@@ -59,7 +58,7 @@ export const useChat = () => {
       
       // Safely cast messages from JSON
       const sessionMessages = Array.isArray(data?.messages) 
-        ? (data.messages as ChatMessage[]) 
+        ? (data.messages as unknown as ChatMessage[]) 
         : [];
       setMessages(sessionMessages);
     } catch (err) {
@@ -146,7 +145,7 @@ export const useChat = () => {
       const { error } = await supabase
         .from('chat_sessions')
         .update({
-          messages: updatedMessages as any,
+          messages: updatedMessages as unknown as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentSession.id);
