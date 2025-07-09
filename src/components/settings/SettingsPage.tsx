@@ -86,7 +86,7 @@ export const SettingsPage = () => {
             <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
             <div className="flex items-center space-x-4 mb-6">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={user?.avatar_url} />
+                <AvatarImage src={user?.avatar} />
                 <AvatarFallback className="text-lg">
                   {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                 </AvatarFallback>
