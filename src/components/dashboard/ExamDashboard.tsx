@@ -1,287 +1,216 @@
 
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthProvider';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar, 
-  Target, 
-  BookOpen, 
-  Clock,
-  TrendingUp,
-  FileText,
-  CheckCircle,
-  Plus,
-  BarChart3,
-  Archive,
-  RotateCcw,
-  Trash2
-} from 'lucide-react';
-import { ScheduleMockTestDialog } from './exam-tools/ScheduleMockTestDialog';
-import { ViewResultsDialog } from './exam-tools/ViewResultsDialog';
-import { RevisionLogDialog } from './exam-tools/RevisionLogDialog';
+import { Calendar, Clock, Target, TrendingUp, BookOpen, Users, Award, Zap } from 'lucide-react';
 
 export const ExamDashboard = () => {
-  const [showScheduleTest, setShowScheduleTest] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [showRevisionLog, setShowRevisionLog] = useState(false);
+  const { user } = useAuth();
+  const [studyStreak, setStudyStreak] = useState(0);
+  const [todayStudyHours, setTodayStudyHours] = useState(0);
+  const [weeklyProgress, setWeeklyProgress] = useState(0);
 
-  // Sample exam preparation data
-  const examStats = {
-    daysLeft: 127,
-    totalTopics: 45,
-    completedTopics: 28,
-    mockTestsCompleted: 12,
-    averageScore: 78
+  useEffect(() => {
+    // Simulate loading user data
+    setStudyStreak(user?.study_streak || 0);
+    setTodayStudyHours(2.5);
+    setWeeklyProgress(68);
+  }, [user]);
+
+  const calculateDaysToExam = () => {
+    if (!user?.exam_date) return null;
+    const examDate = new Date(user.exam_date);
+    const today = new Date();
+    const diffTime = examDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
-  const upcomingTests = [
-    { id: 1, name: "Physics Mock Test #5", date: "2025-01-15", duration: "3 hours" },
-    { id: 2, name: "Chemistry Practice Set", date: "2025-01-17", duration: "2 hours" },
-    { id: 3, name: "Mathematics Full Length", date: "2025-01-20", duration: "3 hours" }
+  const daysToExam = calculateDaysToExam();
+
+  const quickActions = [
+    { icon: BookOpen, label: 'Study Session', action: 'study' },
+    { icon: Target, label: 'Practice Test', action: 'test' },
+    { icon: Calendar, label: 'Schedule', action: 'schedule' },
+    { icon: Users, label: 'Study Group', action: 'group' }
   ];
 
-  const todaysPlan = [
-    { id: 1, subject: "Physics", topic: "Thermodynamics - Heat Engines", completed: true },
-    { id: 2, subject: "Chemistry", topic: "Organic Reactions - SN1/SN2", completed: false },
-    { id: 3, subject: "Mathematics", topic: "Calculus - Integration by Parts", completed: false }
+  const recentActivity = [
+    { subject: 'Mathematics', time: '2 hours ago', score: 85, type: 'Practice Test' },
+    { subject: 'Physics', time: '1 day ago', score: 92, type: 'Flashcards' },
+    { subject: 'Chemistry', time: '2 days ago', score: 78, type: 'Study Session' }
   ];
-
-  const handleDeleteTracker = () => {
-    // Implement delete tracker functionality
-    console.log('Delete tracker clicked');
-  };
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-xl">
-        <h1 className="text-2xl font-bold mb-2">Exam Preparation Dashboard 📚</h1>
-        <p className="text-green-100">Stay focused, track progress, and ace your exams</p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
-          <div className="flex items-center space-x-3">
-            <Calendar className="w-8 h-8 text-red-600" />
-            <div>
-              <p className="text-2xl font-bold text-red-800">{examStats.daysLeft}</p>
-              <p className="text-sm text-red-600">Days to Exam</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-          <div className="flex items-center space-x-3">
-            <Target className="w-8 h-8 text-blue-600" />
-            <div>
-              <p className="text-2xl font-bold text-blue-800">{examStats.completedTopics}/{examStats.totalTopics}</p>
-              <p className="text-sm text-blue-600">Topics Covered</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-8 h-8 text-green-600" />
-            <div>
-              <p className="text-2xl font-bold text-green-800">{examStats.mockTestsCompleted}</p>
-              <p className="text-sm text-green-600">Mock Tests</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-          <div className="flex items-center space-x-3">
-            <TrendingUp className="w-8 h-8 text-purple-600" />
-            <div>
-              <p className="text-2xl font-bold text-purple-800">{examStats.averageScore}%</p>
-              <p className="text-sm text-purple-600">Average Score</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Exam-Specific Action Buttons */}
-      <Card className="p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Exam Preparation Tools</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button 
-            onClick={() => setShowScheduleTest(true)}
-            className="h-auto p-4 flex flex-col items-center space-y-2 bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="w-6 h-6" />
-            <span className="text-sm font-medium">Schedule Mock Test</span>
-          </Button>
-          
-          <Button 
-            onClick={() => setShowResults(true)}
-            className="h-auto p-4 flex flex-col items-center space-y-2 bg-green-600 hover:bg-green-700"
-          >
-            <BarChart3 className="w-6 h-6" />
-            <span className="text-sm font-medium">View Results</span>
-          </Button>
-          
-          <Button 
-            onClick={() => setShowRevisionLog(true)}
-            className="h-auto p-4 flex flex-col items-center space-y-2 bg-purple-600 hover:bg-purple-700"
-          >
-            <RotateCcw className="w-6 h-6" />
-            <span className="text-sm font-medium">Revision Log</span>
-          </Button>
-          
-          <Button 
-            onClick={handleDeleteTracker}
-            variant="outline"
-            className="h-auto p-4 flex flex-col items-center space-y-2 border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <Trash2 className="w-6 h-6" />
-            <span className="text-sm font-medium">Delete Tracker</span>
-          </Button>
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome back, {user?.name}! 🎯
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Preparing for {user?.exam_type || 'your exam'} {daysToExam && `• ${daysToExam} days to go`}
+          </p>
         </div>
+        <div className="flex items-center gap-2 mt-4 sm:mt-0">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Zap className="w-3 h-3" />
+            Level {user?.current_level || 1}
+          </Badge>
+          <Badge variant="outline">
+            {user?.experience_points || 0} XP
+          </Badge>
+        </div>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Days to Exam</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {daysToExam || 'Not set'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {user?.exam_date ? new Date(user.exam_date).toLocaleDateString() : 'Set exam date'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Study Streak</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {studyStreak} days
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Keep it going! 🔥
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today's Study</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {todayStudyHours}h
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Target: 4h daily
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Weekly Progress</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {weeklyProgress}%
+            </div>
+            <Progress value={weeklyProgress} className="mt-2" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Start your study session or track your progress
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="h-auto flex-col gap-2 p-4"
+                  onClick={() => console.log(`Action: ${action.action}`)}
+                >
+                  <Icon className="h-6 w-6" />
+                  <span className="text-sm">{action.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Today's Study Plan */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-            <BookOpen className="w-5 h-5" />
-            <span>Today's Study Plan</span>
-          </h2>
-          
-          <div className="space-y-3">
-            {todaysPlan.map((item) => (
-              <div key={item.id} className={`p-4 rounded-lg border-2 ${
-                item.completed 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="flex items-center space-x-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                    item.completed 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-gray-300 text-gray-600'
-                  }`}>
-                    {item.completed && <CheckCircle className="w-4 h-4" />}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{item.subject}</h3>
-                    <p className="text-sm text-gray-600">{item.topic}</p>
-                  </div>
-                  <Badge variant={item.completed ? "default" : "outline"}>
-                    {item.completed ? "Completed" : "Pending"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6">
-            <div className="flex justify-between text-sm mb-2">
-              <span>Daily Progress</span>
-              <span>33%</span>
-            </div>
-            <Progress value={33} className="h-2" />
-          </div>
-        </Card>
-
-        {/* Upcoming Mock Tests */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-            <Clock className="w-5 h-5" />
-            <span>Upcoming Mock Tests</span>
-          </h2>
-          
-          <div className="space-y-3">
-            {upcomingTests.map((test) => (
-              <div key={test.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Your latest study sessions and practice tests
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{test.name}</h3>
-                    <p className="text-sm text-gray-600">Duration: {test.duration}</p>
+                    <div className="font-medium">{activity.subject}</div>
+                    <div className="text-sm text-gray-500">{activity.type} • {activity.time}</div>
                   </div>
-                  <Badge variant="outline">{test.date}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={activity.score >= 80 ? "default" : "secondary"}>
+                    {activity.score}%
+                  </Badge>
+                  <Award className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
             ))}
           </div>
-          
-          <Button 
-            onClick={() => setShowScheduleTest(true)}
-            className="w-full mt-4"
-            variant="outline"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Schedule New Test
-          </Button>
-        </Card>
-      </div>
-
-      {/* Subject-wise Progress */}
-      <Card className="p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Subject-wise Progress</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <h3 className="font-semibold text-gray-900 mb-2">Physics</h3>
-            <div className="relative w-24 h-24 mx-auto mb-3">
-              <svg className="w-24 h-24 transform -rotate-90">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-200" transform="translate(36, 36)" />
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={`${75 * 0.628} ${100 * 0.628}`} className="text-blue-600" transform="translate(36, 36)" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-bold text-blue-600">75%</span>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">12/16 chapters</p>
-          </div>
-          
-          <div className="text-center">
-            <h3 className="font-semibold text-gray-900 mb-2">Chemistry</h3>
-            <div className="relative w-24 h-24 mx-auto mb-3">
-              <svg className="w-24 h-24 transform -rotate-90">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-200" transform="translate(36, 36)" />
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={`${60 * 0.628} ${100 * 0.628}`} className="text-green-600" transform="translate(36, 36)" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-bold text-green-600">60%</span>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">9/15 chapters</p>
-          </div>
-          
-          <div className="text-center">
-            <h3 className="font-semibold text-gray-900 mb-2">Mathematics</h3>
-            <div className="relative w-24 h-24 mx-auto mb-3">
-              <svg className="w-24 h-24 transform -rotate-90">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-200" transform="translate(36, 36)" />
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={`${85 * 0.628} ${100 * 0.628}`} className="text-purple-600" transform="translate(36, 36)" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-bold text-purple-600">85%</span>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">12/14 chapters</p>
-          </div>
-        </div>
+        </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <ScheduleMockTestDialog 
-        open={showScheduleTest}
-        onOpenChange={setShowScheduleTest}
-      />
-      
-      <ViewResultsDialog 
-        open={showResults}
-        onOpenChange={setShowResults}
-      />
-      
-      <RevisionLogDialog 
-        open={showRevisionLog}
-        onOpenChange={setShowRevisionLog}
-      />
+      {/* Study Plan Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Study Plan Progress</CardTitle>
+          <CardDescription>
+            Track your progress across different subjects
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {['Mathematics', 'Physics', 'Chemistry', 'Biology'].map((subject, index) => {
+              const progress = [75, 60, 85, 45][index];
+              return (
+                <div key={subject} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{subject}</span>
+                    <span className="text-sm text-gray-500">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

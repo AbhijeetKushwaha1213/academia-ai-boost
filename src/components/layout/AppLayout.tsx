@@ -1,186 +1,132 @@
 
-import React, { useState } from 'react';
-import { DesktopSidebar } from './DesktopSidebar';
-import { MobileNavigation } from './MobileNavigation';
-import { AppHeader } from './AppHeader';
-import { ContentRenderer } from './ContentRenderer';
-import { QuickActions } from '../common/QuickActions';
-import { ErrorBoundary } from '../ErrorBoundary';
-import { Button } from '@/components/ui/button';
-import { X, Menu, Maximize, Minimize, EyeOff } from 'lucide-react';
+import React from 'react';
+import OnboardingFlow from '../onboarding/OnboardingFlow';
+import ChatInterface from '../chat/ChatInterface';
+import ProfileUpload from '../profile/ProfileUpload';
+import { UserProfile } from '../../types/user';
 
 interface AppLayoutProps {
-  user: any;
+  user: UserProfile;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  handleSignOut: () => void;
+  handleSignOut: () => Promise<void>;
   isOnline: boolean;
 }
 
-export const AppLayout = ({ 
+const AppLayout: React.FC<AppLayoutProps> = ({ 
   user, 
   activeTab, 
   setActiveTab, 
   handleSignOut, 
   isOnline 
-}: AppLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [fullScreenMode, setFullScreenMode] = useState(false);
-  const [sidebarHidden, setSidebarHidden] = useState(false);
+}) => {
+  console.log('AppLayout render - User:', user?.email, 'ActiveTab:', activeTab);
 
-  console.log('AppLayout render - activeTab:', activeTab, 'user:', user?.id);
-
-  const handleTabChange = (tab: string) => {
-    console.log('AppLayout: Tab change to:', tab);
-    setActiveTab(tab);
-    // Close mobile menu when navigating
-    if (mobileMenuOpen) {
-      setMobileMenuOpen(false);
-    }
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const toggleSidebarVisibility = () => {
-    setSidebarHidden(!sidebarHidden);
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const toggleFullScreen = () => {
-    setFullScreenMode(!fullScreenMode);
-  };
-
+  // Main app layout with navigation
   return (
-    <div className="min-h-screen bg-gray-50 flex overflow-hidden">
-      {/* Desktop Sidebar - Collapsible and Hideable */}
-      <div className={`hidden lg:flex transition-all duration-300 ease-in-out ${
-        fullScreenMode || sidebarHidden ? 'w-0' : sidebarOpen ? 'w-64' : 'w-0'
-      }`}>
-        <div className={`w-64 transition-transform duration-300 ease-in-out ${
-          sidebarOpen && !sidebarHidden ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <DesktopSidebar 
-            activeTab={activeTab} 
-            onTabChange={handleTabChange}
-            onSignOut={handleSignOut}
-          />
-        </div>
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-            <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">Menu</h2>
-              <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(false)}>
-                <X className="w-5 h-5" />
-              </Button>
+    <div className="min-h-screen bg-gray-100">
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-8">
+              <h1 className="text-xl font-bold text-gray-900">StudyMate AI</h1>
+              <div className="hidden md:flex items-center gap-6">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`font-medium transition-colors ${
+                    activeTab === 'chat' 
+                      ? 'text-blue-600' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  AI Chat
+                </button>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`font-medium transition-colors ${
+                    activeTab === 'profile' 
+                      ? 'text-blue-600' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => setActiveTab('home')}
+                  className={`font-medium transition-colors ${
+                    activeTab === 'home' 
+                      ? 'text-blue-600' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  Dashboard
+                </button>
+              </div>
             </div>
-            <div className="h-full overflow-y-auto">
-              <DesktopSidebar 
-                activeTab={activeTab} 
-                onTabChange={handleTabChange}
-                onSignOut={handleSignOut}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Enhanced Header with controls */}
-        <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
-          <div className="flex items-center space-x-4">
-            {/* Sidebar Toggle - Desktop */}
-            {!fullScreenMode && !sidebarHidden && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                className="hidden lg:flex"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            )}
             
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleMobileMenu}
-              className="lg:hidden"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-
-            <h1 className="text-xl font-semibold text-gray-900">
-              {activeTab === 'home' ? 'Dashboard' :
-               activeTab === 'flashcards' ? 'Flashcards' :
-               activeTab === 'ai' ? 'AI Chat' :
-               activeTab === 'achievements' ? 'Achievements' :
-               activeTab === 'resources' ? 'Resources' :
-               activeTab === 'generate' ? 'AI Generator' :
-               activeTab === 'settings' ? 'Settings' :
-               'StudyMate AI'}
-            </h1>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {/* Hide Sidebar Toggle */}
-            {!fullScreenMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebarVisibility}
-                className="hidden lg:flex"
-                title={sidebarHidden ? 'Show Sidebar' : 'Hide Sidebar'}
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-600">
+                Welcome, {user?.name || user?.email}
+              </div>
+              {user?.avatar && (
+                <img
+                  src={user.avatar}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              )}
+              {!isOnline && (
+                <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                  Offline
+                </span>
+              )}
+              <button
+                onClick={handleSignOut}
+                className="text-gray-700 hover:text-red-600 font-medium transition-colors"
               >
-                <EyeOff className="w-5 h-5" />
-              </Button>
-            )}
-
-            {/* Full Screen Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleFullScreen}
-              className="hidden sm:flex"
-              title={fullScreenMode ? 'Exit Full Screen' : 'Enter Full Screen'}
-            >
-              {fullScreenMode ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-            </Button>
-
-            {/* Online Status */}
-            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-600 hidden sm:block">
-              {isOnline ? 'Online' : 'Offline'}
-            </span>
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-4 lg:p-6 pb-20 lg:pb-6">
-            <ErrorBoundary>
-              <ContentRenderer activeTab={activeTab} onNavigate={handleTabChange} />
-            </ErrorBoundary>
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Route to different components based on activeTab */}
+        {activeTab === 'chat' && <ChatInterface />}
+        {activeTab === 'profile' && <ProfileUpload />}
+        
+        {/* Clean dashboard without debug elements */}
+        {activeTab === 'home' && (
+          <div className="text-center py-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Welcome to StudyMate AI! 🎓
+            </h2>
+            <p className="text-gray-600 mb-8">
+              {user?.user_type === 'college' 
+                ? `${user.college} - Semester ${user.semester}`
+                : `Preparing for ${user.exam_type} - ${user.exam_date}`
+              }
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setActiveTab('chat')}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                🤖 Start AI Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('profile')}
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                👤 Manage Profile
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Mobile Bottom Navigation - Hide in full screen */}
-      {!fullScreenMode && (
-        <MobileNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
-      )}
+        )}
+      </main>
     </div>
   );
 };
+
+export default AppLayout;

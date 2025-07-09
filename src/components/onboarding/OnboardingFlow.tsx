@@ -1,605 +1,366 @@
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { useAuth } from '../auth/AuthProvider';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  User, 
-  GraduationCap, 
-  Target, 
-  BookOpen, 
-  Clock, 
-  Star,
-  Calendar,
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-  Camera,
-  Upload
-} from 'lucide-react';
-import { useAuth } from '../auth/AuthProvider';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { GraduationCap, Target, BookOpen, Calendar, User, CheckCircle } from 'lucide-react';
 
-interface OnboardingData {
-  name: string;
-  age: string;
-  avatarUrl?: string;
-  learningMode: 'college' | 'exam' | '';
-  subjects: string[];
-  examType?: string;
-  targetYear?: string;
-  semester?: string;
-  course?: string;
-  college?: string;
-  studyPreference: string[];
-  motivation: string[];
-  dailyHours: string;
-  reviewModes: string[];
-  email: string;
-  studyReminder?: string;
-}
-
-const STEPS = [
-  'Welcome & Identity',
-  'Profile Photo',
-  'Learning Mode & Context',
-  'Academic Details',
-  'Study Preferences',
-  'Review & Schedule',
-  'Complete Profile'
-];
-
-export const OnboardingFlow = () => {
-  const { updateUserType } = useAuth();
+const OnboardingFlow = () => {
+  const { user, updateUserType } = useAuth();
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<OnboardingData>({
-    name: '',
-    age: '',
-    learningMode: '',
-    subjects: [],
-    studyPreference: [],
-    motivation: [],
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    mode: '' as 'college' | 'exam_preparation',
+    // College fields
+    college: '',
+    course: '',
+    semester: '',
+    // Exam fields
+    examType: '',
+    targetYear: '',
+    examDate: '',
+    // Additional fields
+    subjects: [] as string[],
+    studyPreference: '',
+    motivation: '',
     dailyHours: '',
-    reviewModes: [],
-    email: ''
+    reviewModes: [] as string[]
   });
 
-  const subjects = [
-    'Physics', 'Chemistry', 'Biology', 'Mathematics', 'Computer Science', 
-    'English', 'Current Affairs', 'History', 'Geography', 'Economics',
-    'Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering'
-  ];
-
-  const examTypes = [
-    'NEET (Medical)', 'JEE (Engineering)', 'UPSC (Civil Services)', 
-    'GATE (Graduate Aptitude)', 'CUET (Common University)', 'Bank/SSC', 
-    'CAT (MBA)', 'CLAT (Law)', 'Other'
-  ];
-
-  const courses = [
-    'BTech (Computer Science)', 'BTech (Mechanical)', 'BTech (Electrical)', 
-    'BTech (Civil)', 'BSc (Biology)', 'BSc (Physics)', 'BSc (Chemistry)',
-    'BA (Economics)', 'BA (English)', 'BBA', 'BCom', 'Other'
-  ];
-
-  const studyPreferences = [
-    'Solo Study Sessions', 'Group Learning', 'Guided/Structured Plans', 
-    'Revision-Heavy Approach', 'Practice-Based Learning', 'Visual Learning'
-  ];
-
-  const motivations = [
-    'Achievements & Gamification', 'Progress Tracking', 'AI Assistant Support', 
-    'Smart Planning Tools', 'Peer Competition', 'Regular Reminders'
-  ];
-
-  const reviewModes = [
-    'Flashcards', 'Mind Maps', 'Practice Quizzes', 'Summary Notes', 
-    'Mock Tests', 'Video Tutorials'
-  ];
-
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubjectToggle = (subject: string) => {
-    setData(prev => ({
+  const handleMultiSelect = (field: string, value: string) => {
+    setFormData(prev => ({
       ...prev,
-      subjects: prev.subjects.includes(subject)
-        ? prev.subjects.filter(s => s !== subject)
-        : [...prev.subjects, subject]
+      [field]: prev[field as keyof typeof prev].includes(value)
+        ? (prev[field as keyof typeof prev] as string[]).filter((item: string) => item !== value)
+        : [...(prev[field as keyof typeof prev] as string[]), value]
     }));
   };
 
-  const handleArrayToggle = (field: keyof OnboardingData, value: string) => {
-    setData(prev => ({
-      ...prev,
-      [field]: Array.isArray(prev[field])
-        ? (prev[field] as string[]).includes(value)
-          ? (prev[field] as string[]).filter(item => item !== value)
-          : [...(prev[field] as string[]), value]
-        : [value]
-    }));
-  };
-
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setData(prev => ({ ...prev, avatarUrl: e.target?.result as string }));
-      };
-      reader.readAsDataURL(file);
+  const completeOnboarding = async () => {
+    if (!formData.mode) {
+      toast({
+        title: "Selection Required",
+        description: "Please select your study mode to continue.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  const handleComplete = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const userType = data.learningMode;
-      const details: any = {
-        name: data.name,
-        age: data.age,
-        avatarUrl: data.avatarUrl,
-        subjects: data.subjects,
-        studyPreference: data.studyPreference,
-        motivation: data.motivation,
-        dailyHours: data.dailyHours,
-        reviewModes: data.reviewModes,
-        email: data.email,
-        studyReminder: data.studyReminder
-      };
+      await updateUserType(formData.mode === 'college' ? 'college' : 'exam', {
+        name: formData.name,
+        college: formData.college,
+        course: formData.course,
+        semester: parseInt(formData.semester),
+        examType: formData.examType,
+        targetYear: formData.targetYear,
+        examDate: formData.examDate,
+        subjects: formData.subjects,
+        studyPreference: formData.studyPreference,
+        motivation: formData.motivation,
+        dailyHours: formData.dailyHours,
+        reviewModes: formData.reviewModes
+      });
 
-      if (userType === 'exam') {
-        details.examType = data.examType;
-        details.targetYear = data.targetYear;
-      } else {
-        details.college = data.college;
-        details.course = data.course;
-        details.semester = parseInt(data.semester || '1');
-      }
-
-      await updateUserType(userType as 'exam' | 'college', details);
-      
       toast({
         title: "Welcome to StudyMate AI! 🎉",
-        description: "Your personalized learning journey begins now!",
+        description: "Your profile has been set up successfully.",
       });
     } catch (error) {
-      console.error('Onboarding completion error:', error);
+      console.error('Onboarding error:', error);
       toast({
         title: "Setup Error",
         description: "Failed to complete setup. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: return data.name && data.age;
-      case 1: return true; // Avatar is optional
-      case 2: return data.learningMode && data.subjects.length > 0;
-      case 3: 
-        if (data.learningMode === 'exam') {
-          return data.examType && data.targetYear;
-        } else {
-          return data.semester && data.course;
-        }
-      case 4: return data.studyPreference.length > 0 && data.motivation.length > 0;
-      case 5: return data.dailyHours && data.reviewModes.length > 0;
-      case 6: return data.email;
-      default: return true;
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <User className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Welcome to StudyMate AI!</h2>
-              <p className="text-lg text-gray-600">Let's get to know you better to personalize your experience</p>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="name" className="text-base font-medium">What's your full name? *</Label>
-                <Input
-                  id="name"
-                  value={data.name}
-                  onChange={(e) => setData({...data, name: e.target.value})}
-                  placeholder="Enter your full name"
-                  className="mt-2 h-12 text-base"
-                />
-              </div>
-              <div>
-                <Label className="text-base font-medium">How old are you? *</Label>
-                <Select value={data.age} onValueChange={(value) => setData({...data, age: value})}>
-                  <SelectTrigger className="mt-2 h-12">
-                    <SelectValue placeholder="Select your age range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="13-16">13-16 years</SelectItem>
-                    <SelectItem value="17-20">17-20 years</SelectItem>
-                    <SelectItem value="21-25">21-25 years</SelectItem>
-                    <SelectItem value="26-30">26-30 years</SelectItem>
-                    <SelectItem value="30+">30+ years</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        );
-
+    switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Camera className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Add Your Profile Photo</h2>
-              <p className="text-lg text-gray-600">Make your profile more personal (optional)</p>
-            </div>
-
-            <div className="flex flex-col items-center space-y-6">
-              <Avatar className="w-32 h-32 border-4 border-gray-200 shadow-lg">
-                {data.avatarUrl ? (
-                  <AvatarImage src={data.avatarUrl} alt="Profile" />
-                ) : (
-                  <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    {data.name ? getInitials(data.name) : 'U'}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-
-              <div className="text-center">
-                <input
-                  type="file"
-                  id="avatar-upload"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                <User className="w-6 h-6" />
+                Welcome to StudyMate AI!
+              </CardTitle>
+              <CardDescription>
+                Let's personalize your learning experience
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Your Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                 />
-                <label
-                  htmlFor="avatar-upload"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  <Upload className="w-5 h-5 mr-2" />
-                  Upload Photo
-                </label>
-                <p className="text-sm text-gray-500 mt-2">JPG, PNG or GIF (max 5MB)</p>
               </div>
-            </div>
-          </div>
+
+              <div className="space-y-4">
+                <Label>What's your primary goal?</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card 
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      formData.mode === 'college' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => handleInputChange('mode', 'college')}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <GraduationCap className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                      <h3 className="font-semibold text-lg mb-2">College Student</h3>
+                      <p className="text-sm text-gray-600">
+                        I'm currently studying in college and need help with coursework
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card 
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      formData.mode === 'exam_preparation' ? 'ring-2 ring-green-500 bg-green-50' : ''
+                    }`}
+                    onClick={() => handleInputChange('mode', 'exam_preparation')}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Target className="w-12 h-12 mx-auto mb-4 text-green-600" />
+                      <h3 className="font-semibold text-lg mb-2">Exam Preparation</h3>
+                      <p className="text-sm text-gray-600">
+                        I'm preparing for competitive exams like JEE, NEET, CAT, etc.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <div></div>
+                <Button 
+                  onClick={() => setStep(2)}
+                  disabled={!formData.mode || !formData.name.trim()}
+                >
+                  Continue
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">What describes your learning journey?</h2>
-              <p className="text-lg text-gray-600">This helps us customize your dashboard and features</p>
-            </div>
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                {formData.mode === 'college' ? <GraduationCap className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                {formData.mode === 'college' ? 'College Details' : 'Exam Details'}
+              </CardTitle>
+              <CardDescription>
+                Tell us more about your {formData.mode === 'college' ? 'academic' : 'exam'} details
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {formData.mode === 'college' ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="college">College/University Name</Label>
+                    <Input
+                      id="college"
+                      placeholder="Enter your college name"
+                      value={formData.college}
+                      onChange={(e) => handleInputChange('college', e.target.value)}
+                    />
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <Card 
-                className={`p-8 cursor-pointer transition-all duration-300 hover:shadow-xl ${
-                  data.learningMode === 'college' 
-                    ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200' 
-                    : 'hover:border-blue-300 bg-white hover:shadow-lg'
-                }`}
-                onClick={() => setData({...data, learningMode: 'college'})}
-              >
-                <div className="text-center">
-                  <GraduationCap className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                  <h3 className="font-bold text-xl mb-3">College Student</h3>
-                  <p className="text-gray-600 leading-relaxed">Building skills, managing coursework, working on projects, and preparing for your career</p>
-                </div>
-              </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="course">Course/Branch</Label>
+                    <Select value={formData.course} onValueChange={(value) => handleInputChange('course', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="computer-science">Computer Science</SelectItem>
+                        <SelectItem value="information-technology">Information Technology</SelectItem>
+                        <SelectItem value="mechanical">Mechanical Engineering</SelectItem>
+                        <SelectItem value="electrical">Electrical Engineering</SelectItem>
+                        <SelectItem value="civil">Civil Engineering</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <Card 
-                className={`p-8 cursor-pointer transition-all duration-300 hover:shadow-xl ${
-                  data.learningMode === 'exam' 
-                    ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200' 
-                    : 'hover:border-green-300 bg-white hover:shadow-lg'
-                }`}
-                onClick={() => setData({...data, learningMode: 'exam'})}
-              >
-                <div className="text-center">
-                  <Target className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                  <h3 className="font-bold text-xl mb-3">Exam Preparation</h3>
-                  <p className="text-gray-600 leading-relaxed">Focused preparation for competitive exams like JEE, NEET, UPSC, GATE, and more</p>
-                </div>
-              </Card>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Current Semester</Label>
+                    <Select value={formData.semester} onValueChange={(value) => handleInputChange('semester', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                          <SelectItem key={sem} value={sem.toString()}>
+                            Semester {sem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="examType">Target Exam</Label>
+                    <Select value={formData.examType} onValueChange={(value) => handleInputChange('examType', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your target exam" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="JEE">JEE (Joint Entrance Examination)</SelectItem>
+                        <SelectItem value="NEET">NEET (Medical)</SelectItem>
+                        <SelectItem value="CAT">CAT (Management)</SelectItem>
+                        <SelectItem value="GATE">GATE (Engineering)</SelectItem>
+                        <SelectItem value="UPSC">UPSC (Civil Services)</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div>
-              <Label className="text-lg font-medium mb-4 block">Which subjects are you most focused on? *</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {subjects.map((subject) => (
-                  <Badge
-                    key={subject}
-                    variant={data.subjects.includes(subject) ? "default" : "outline"}
-                    className={`cursor-pointer p-3 text-center justify-center transition-all duration-200 hover:scale-105 ${
-                      data.subjects.includes(subject) 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' 
-                        : 'hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                    onClick={() => handleSubjectToggle(subject)}
-                  >
-                    {subject}
-                  </Badge>
-                ))}
+                  <div className="space-y-2">
+                    <Label htmlFor="targetYear">Target Year</Label>
+                    <Select value={formData.targetYear} onValueChange={(value) => handleInputChange('targetYear', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="When do you plan to take the exam?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2024">2024</SelectItem>
+                        <SelectItem value="2025">2025</SelectItem>
+                        <SelectItem value="2026">2026</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="examDate">Exam Date (if known)</Label>
+                    <Input
+                      id="examDate"
+                      type="date"
+                      value={formData.examDate}
+                      onChange={(e) => handleInputChange('examDate', e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Back
+                </Button>
+                <Button onClick={() => setStep(3)}>
+                  Continue
+                </Button>
               </div>
-              <p className="text-sm text-gray-500 mt-2">Select at least one subject</p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
 
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Tell us about your academic details</h2>
-              <p className="text-lg text-gray-600">This helps us create the perfect study plan for you</p>
-            </div>
-
-            {data.learningMode === 'exam' ? (
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-medium">Which exam are you preparing for? *</Label>
-                  <Select value={data.examType} onValueChange={(value) => setData({...data, examType: value})}>
-                    <SelectTrigger className="mt-2 h-12">
-                      <SelectValue placeholder="Select your target exam" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {examTypes.map((exam) => (
-                        <SelectItem key={exam} value={exam}>{exam}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">What is your target year? *</Label>
-                  <Select value={data.targetYear} onValueChange={(value) => setData({...data, targetYear: value})}>
-                    <SelectTrigger className="mt-2 h-12">
-                      <SelectValue placeholder="Select target year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2025">2025</SelectItem>
-                      <SelectItem value="2026">2026</SelectItem>
-                      <SelectItem value="2027">2027</SelectItem>
-                      <SelectItem value="2028">2028</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-medium">Which semester are you currently in? *</Label>
-                  <Select value={data.semester} onValueChange={(value) => setData({...data, semester: value})}>
-                    <SelectTrigger className="mt-2 h-12">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1,2,3,4,5,6,7,8].map((sem) => (
-                        <SelectItem key={sem} value={sem.toString()}>Semester {sem}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">What is your course/branch? *</Label>
-                  <Select value={data.course} onValueChange={(value) => setData({...data, course: value})}>
-                    <SelectTrigger className="mt-2 h-12">
-                      <SelectValue placeholder="Select your course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course} value={course}>{course}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-base font-medium">Which college are you from? (Optional)</Label>
-                  <Input
-                    value={data.college || ''}
-                    onChange={(e) => setData({...data, college: e.target.value})}
-                    placeholder="e.g., IIT Delhi, MIT, Stanford University"
-                    className="mt-2 h-12"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">How do you prefer to study?</h2>
-              <p className="text-lg text-gray-600">Let's customize your learning experience</p>
-            </div>
-
-            <div className="space-y-8">
-              <div>
-                <Label className="text-lg font-medium mb-4 block">Study Preferences (select all that apply) *</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {studyPreferences.map((pref) => (
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                <BookOpen className="w-6 h-6" />
+                Study Preferences
+              </CardTitle>
+              <CardDescription>
+                Help us customize your learning experience
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Subjects of Interest</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Programming', 'History', 'Geography'].map(subject => (
                     <Badge
-                      key={pref}
-                      variant={data.studyPreference.includes(pref) ? "default" : "outline"}
-                      className={`cursor-pointer p-4 text-center justify-center transition-all duration-200 hover:scale-105 ${
-                        data.studyPreference.includes(pref) 
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md' 
-                          : 'hover:bg-purple-50 hover:border-purple-300'
-                      }`}
-                      onClick={() => handleArrayToggle('studyPreference', pref)}
+                      key={subject}
+                      variant={formData.subjects.includes(subject) ? "default" : "outline"}
+                      className="cursor-pointer p-2 justify-center"
+                      onClick={() => handleMultiSelect('subjects', subject)}
                     >
-                      {pref}
+                      {subject}
                     </Badge>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <Label className="text-lg font-medium mb-4 block">What motivates you to study? *</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {motivations.map((motivation) => (
-                    <Badge
-                      key={motivation}
-                      variant={data.motivation.includes(motivation) ? "default" : "outline"}
-                      className={`cursor-pointer p-4 text-center justify-center transition-all duration-200 hover:scale-105 ${
-                        data.motivation.includes(motivation) 
-                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-md' 
-                          : 'hover:bg-green-50 hover:border-green-300'
-                      }`}
-                      onClick={() => handleArrayToggle('motivation', motivation)}
-                    >
-                      {motivation}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Plan your study schedule</h2>
-              <p className="text-lg text-gray-600">Help us create the perfect study routine for you</p>
-            </div>
-
-            <div className="space-y-8">
-              <div>
-                <Label className="text-base font-medium">How many hours do you plan to study daily? *</Label>
-                <Select value={data.dailyHours} onValueChange={(value) => setData({...data, dailyHours: value})}>
-                  <SelectTrigger className="mt-2 h-12">
-                    <SelectValue placeholder="Select daily study hours" />
+              <div className="space-y-2">
+                <Label htmlFor="studyPreference">Preferred Study Style</Label>
+                <Select value={formData.studyPreference} onValueChange={(value) => handleInputChange('studyPreference', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="How do you prefer to study?" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="<1">Less than 1 hour</SelectItem>
-                    <SelectItem value="1-2">1-2 hours</SelectItem>
-                    <SelectItem value="3-4">3-4 hours</SelectItem>
-                    <SelectItem value="5-6">5-6 hours</SelectItem>
-                    <SelectItem value="7+">7+ hours</SelectItem>
+                    <SelectItem value="visual">Visual (diagrams, charts, videos)</SelectItem>
+                    <SelectItem value="auditory">Auditory (lectures, discussions)</SelectItem>
+                    <SelectItem value="reading">Reading & Writing</SelectItem>
+                    <SelectItem value="kinesthetic">Hands-on Practice</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label className="text-lg font-medium mb-4 block">Preferred review methods (select all that apply) *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {reviewModes.map((mode) => (
-                    <Badge
-                      key={mode}
-                      variant={data.reviewModes.includes(mode) ? "default" : "outline"}
-                      className={`cursor-pointer p-4 text-center justify-center transition-all duration-200 hover:scale-105 ${
-                        data.reviewModes.includes(mode) 
-                          ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-md' 
-                          : 'hover:bg-orange-50 hover:border-orange-300'
-                      }`}
-                      onClick={() => handleArrayToggle('reviewModes', mode)}
-                    >
-                      {mode}
-                    </Badge>
-                  ))}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="dailyHours">Daily Study Hours Target</Label>
+                <Select value={formData.dailyHours} onValueChange={(value) => handleInputChange('dailyHours', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="How many hours per day?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1-2">1-2 hours</SelectItem>
+                    <SelectItem value="2-4">2-4 hours</SelectItem>
+                    <SelectItem value="4-6">4-6 hours</SelectItem>
+                    <SelectItem value="6+">6+ hours</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </div>
-        );
 
-      case 6:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <CheckCircle className="w-10 h-10 text-white" />
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(2)}>
+                  Back
+                </Button>
+                <Button 
+                  onClick={completeOnboarding}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Setting up...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Complete Setup
+                    </>
+                  )}
+                </Button>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Complete your profile</h2>
-              <p className="text-lg text-gray-600">Just a few more details to get started</p>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="email" className="text-base font-medium">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={data.email}
-                  onChange={(e) => setData({...data, email: e.target.value})}
-                  placeholder="Enter your email address"
-                  className="mt-2 h-12"
-                />
-              </div>
-              <div>
-                <Label htmlFor="reminder" className="text-base font-medium">Daily Study Reminder (Optional)</Label>
-                <Input
-                  id="reminder"
-                  type="time"
-                  value={data.studyReminder || ''}
-                  onChange={(e) => setData({...data, studyReminder: e.target.value})}
-                  className="mt-2 h-12"
-                />
-                <p className="text-sm text-gray-500 mt-2">We'll send you a gentle reminder to study</p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200">
-              <h3 className="font-bold text-blue-900 mb-4 text-lg">Your Profile Summary:</h3>
-              <div className="text-sm text-blue-800 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4" />
-                  <span><strong>Name:</strong> {data.name}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="w-4 h-4" />
-                  <span><strong>Mode:</strong> {data.learningMode === 'college' ? 'College Student' : 'Exam Preparation'}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Target className="w-4 h-4" />
-                  <span><strong>Subjects:</strong> {data.subjects.slice(0, 3).join(', ')}{data.subjects.length > 3 ? '...' : ''}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4" />
-                  <span><strong>Daily Study:</strong> {data.dailyHours} hours</span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
 
       default:
@@ -608,78 +369,36 @@ export const OnboardingFlow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
-        {/* Progress Bar */}
+        {/* Progress indicator */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-semibold text-gray-700">
-              Step {currentStep + 1} of {STEPS.length}
-            </span>
-            <span className="text-sm text-gray-600 font-medium">{STEPS[currentStep]}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-            <div 
-              className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
-              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Main Card */}
-        <Card className="p-8 lg:p-12 bg-white/90 backdrop-blur-sm shadow-2xl border-0 rounded-2xl">
-          {renderStep()}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-10">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-              className="flex items-center px-6 py-3 h-12 border-2 hover:bg-gray-50"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
-
-            {currentStep === STEPS.length - 1 ? (
-              <Button
-                onClick={handleComplete}
-                disabled={!canProceed() || isLoading}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center px-8 py-3 h-12 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating your profile...
-                  </>
-                ) : (
-                  <>
-                    Complete Setup
-                    <Star className="w-4 h-4 ml-2" />
-                  </>
+          <div className="flex items-center justify-center space-x-4">
+            {[1, 2, 3].map((stepNumber) => (
+              <div key={stepNumber} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  stepNumber === step 
+                    ? 'bg-blue-600 text-white' 
+                    : stepNumber < step 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {stepNumber < step ? <CheckCircle className="w-4 h-4" /> : stepNumber}
+                </div>
+                {stepNumber < 3 && (
+                  <div className={`w-12 h-1 mx-2 ${
+                    stepNumber < step ? 'bg-green-600' : 'bg-gray-200'
+                  }`} />
                 )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8 py-3 h-12 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            )}
+              </div>
+            ))}
           </div>
-        </Card>
-
-        {/* Help Text */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Don't worry! You can always change these preferences later in your settings
-          </p>
         </div>
+
+        {renderStep()}
       </div>
     </div>
   );
 };
+
+export default OnboardingFlow;
