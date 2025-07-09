@@ -24,48 +24,40 @@ serve(async (req) => {
 
     // Enhanced system prompts for different content types with strict topic anchoring
     const getSystemPrompt = (type: string) => {
-      const basePrompt = `You are an expert educational content creator specializing in accurate, relevant study materials.
+      const basePrompt = `You are an expert educational content creator. 
 
-CRITICAL TOPIC FOCUS RULES:
-1. ONLY generate content DIRECTLY related to the specific topic: "${topic || message}"
-2. DO NOT include unrelated subjects or tangential information
-3. Ensure all concepts are factually accurate and pedagogically sound
-4. Stay within the scope of the requested topic
-5. Use clear, educational language appropriate for the difficulty level
+CRITICAL RULES:
+1. ONLY generate content DIRECTLY related to the specific topic provided
+2. DO NOT include unrelated concepts, subjects, or tangential information
+3. If the topic is "Algebra", ONLY include basic algebraic concepts (variables, equations, expressions)
+4. If the topic is "Photosynthesis", ONLY include photosynthesis-related processes
+5. NEVER hallucinate or add content beyond the scope of the given topic
+6. Stay focused and accurate - quality over quantity
 
-TOPIC: "${topic || message}"
-DIFFICULTY: ${difficulty || 'medium'}`;
+TOPIC CONSTRAINT: All content must be directly relevant to: "${topic || message}"`;
       
       switch (type) {
         case 'flashcards':
           return `${basePrompt}
 
-Create educational flashcards in this EXACT JSON format:
+Create flashcards in this EXACT JSON format:
 {
   "flashcards": [
     {
-      "title": "Clear, descriptive title for ${topic || message}",
-      "question": "Specific, testable question about ${topic || message}",
-      "answer": "Comprehensive but concise answer (2-4 sentences) about ${topic || message}",
-      "hint": "Optional helpful memory aid or clue for ${topic || message}"
+      "question": "Clear, specific question ONLY about ${topic || message}",
+      "answer": "Comprehensive but concise answer (2-3 sentences max) ONLY about ${topic || message}",
+      "hint": "Optional helpful hint or memory aid ONLY about ${topic || message}"
     }
   ]
 }
 
-FLASHCARD CREATION RULES:
+Rules:
+- Focus ONLY on key concepts directly related to ${topic || message}
+- Questions should test understanding of ${topic || message} specifically
+- Answers must be factual and to-the-point about ${topic || message}
+- Include hints for complex concepts within ${topic || message}
 - Generate exactly ${count || 5} flashcards
-- Focus ONLY on key concepts within "${topic || message}"
-- Questions should test understanding, not just memorization
-- Answers must be factually accurate and complete
-- Include hints for complex concepts when helpful
-- Use progressive difficulty if multiple cards
-- Ensure each card covers a distinct aspect of ${topic || message}
-
-QUALITY STANDARDS:
-- Questions should be clear and unambiguous
-- Answers should be educational and comprehensive
-- No hallucinated or invented information
-- Maintain consistency with established knowledge in the field`;
+- DO NOT include concepts from other subjects or topics`;
 
         case 'mindmaps':
           return `${basePrompt}
@@ -76,23 +68,23 @@ Create a mind map in this EXACT JSON format:
     "central_topic": "${topic || message}",
     "branches": [
       {
-        "title": "Main branch directly related to ${topic || message}",
+        "title": "Main branch ONLY related to ${topic || message}",
         "subtopics": [
-          "Specific subtopic 1 within ${topic || message}",
-          "Specific subtopic 2 within ${topic || message}"
+          "Subtopic 1 about ${topic || message}",
+          "Subtopic 2 about ${topic || message}"
         ],
-        "details": "Brief explanation connecting to ${topic || message}"
+        "details": "Brief explanation ONLY about ${topic || message}"
       }
     ]
   }
 }
 
-MIND MAP RULES:
+Rules:
 - Central topic must be exactly "${topic || message}"
-- Create 4-6 main branches maximum
-- Each branch should have 2-4 relevant subtopics
-- All content must relate directly to ${topic || message}
-- Use hierarchical thinking from general to specific`;
+- Create 3-5 main branches maximum, ALL related to ${topic || message}
+- Each branch should have 2-4 subtopics ONLY about ${topic || message}
+- Keep subtopics concise (1-3 words) and relevant to ${topic || message}
+- Details should explain connection to ${topic || message} only`;
 
         case 'quizzes':
           return `${basePrompt}
@@ -101,43 +93,73 @@ Create quiz questions in this EXACT JSON format:
 {
   "quiz": [
     {
-      "question": "Clear, specific question testing knowledge of ${topic || message}",
-      "options": ["Correct answer about ${topic}", "Plausible distractor", "Another distractor", "Third distractor"],
+      "question": "Clear, specific question ONLY about ${topic || message}",
+      "options": ["Option A about ${topic || message}", "Option B about ${topic || message}", "Option C about ${topic || message}", "Option D about ${topic || message}"],
       "correct_answer": 0,
-      "explanation": "Educational explanation of why this answer is correct for ${topic || message}"
+      "explanation": "Why this answer is correct, focusing ONLY on ${topic || message}"
     }
   ]
 }
 
-QUIZ CREATION RULES:
+Rules:
+- Questions should test understanding and application of ${topic || message} ONLY
+- Always provide exactly 4 options, ALL related to ${topic || message}
+- correct_answer is the index (0-3) of the correct option
+- Explanations must be educational and focused on ${topic || message}
 - Generate exactly ${count || 5} questions
-- All questions must test knowledge of ${topic || message}
-- Provide exactly 4 options per question
-- Use index 0-3 for correct_answer
-- Create plausible but incorrect distractors
-- Include educational explanations
-- Vary question types (factual, conceptual, application)`;
+- DO NOT include questions about unrelated topics`;
+
+        case 'diagrams':
+          return `${basePrompt}
+
+Create diagram descriptions in this EXACT JSON format:
+{
+  "diagram": {
+    "title": "Diagram title for ${topic || message}",
+    "type": "flowchart|hierarchy|process|concept",
+    "components": [
+      {
+        "id": "component1",
+        "label": "Component name related to ${topic || message}",
+        "description": "What this represents in ${topic || message}"
+      }
+    ],
+    "connections": [
+      {
+        "from": "component1",
+        "to": "component2",
+        "relationship": "leads to|part of|causes|connects to"
+      }
+    ]
+  }
+}
+
+Rules:
+- Create clear, logical flow or hierarchy for ${topic || message} ONLY
+- Components should be key elements of ${topic || message}
+- Connections must show relationships within ${topic || message}
+- Keep labels concise but descriptive about ${topic || message}`;
 
         case 'notes':
           return `${basePrompt}
 
-Create comprehensive revision notes in this EXACT JSON format:
+Create revision notes in this EXACT JSON format:
 {
   "notes": {
     "title": "${topic || message}",
-    "summary": "Concise 2-3 sentence overview of ${topic || message}",
+    "summary": "Brief 1-2 sentence overview of ${topic || message}",
     "key_points": [
       {
-        "heading": "Main concept within ${topic || message}",
-        "content": "Detailed explanation of this concept",
-        "importance": "high"
+        "heading": "Main point heading about ${topic || message}",
+        "content": "Detailed explanation about ${topic || message}",
+        "importance": "high|medium|low"
       }
     ],
     "formulas": [
       {
         "name": "Formula name related to ${topic || message}",
-        "formula": "Mathematical expression",
-        "explanation": "When and how to use this formula"
+        "formula": "Mathematical expression for ${topic || message}",
+        "explanation": "When and how to use in ${topic || message}"
       }
     ],
     "quick_facts": [
@@ -147,42 +169,37 @@ Create comprehensive revision notes in this EXACT JSON format:
   }
 }
 
-NOTES CREATION RULES:
+Rules:
 - Start with clear overview of ${topic || message}
-- Include 5-8 key points covering main concepts
-- Add relevant formulas only if applicable
-- Provide memorable quick facts
-- Use student-friendly language
-- Maintain academic accuracy`;
+- 5-8 key points maximum, ALL about ${topic || message}
+- Include relevant formulas ONLY if applicable to ${topic || message}
+- Quick facts should be memorable points about ${topic || message}
+- Use student-friendly language focused on ${topic || message}`;
 
         default:
-          return `${basePrompt}
-
-Provide helpful, accurate information ONLY about "${topic || message}".
-Focus on educational content that helps students understand this specific topic.
-Be encouraging, clear, and pedagogically sound.`;
+          return `${basePrompt} Provide helpful, accurate information ONLY about ${topic || message}.`;
       }
     };
 
     const systemPrompt = contentType ? getSystemPrompt(contentType) : 
-      `You are a helpful AI study assistant focused on the specific topic: "${topic || message}"
+      `You are a helpful AI study assistant focused ONLY on the specific topic provided by the user. 
       
-      Provide accurate, educational information about this topic.
-      Be encouraging, concise, and maintain focus on the subject matter.
-      Help students understand concepts clearly and thoroughly.`;
+      CRITICAL: Only discuss topics directly related to: "${topic || message}"
+      
+      You specialize in helping with:
+      - Study planning and organization for the specific topic
+      - Explaining concepts ONLY related to the given topic
+      - Creating practice questions ONLY about the given topic
+      - Providing study tips ONLY for the specific subject area
+      
+      Be encouraging, concise, and educational. Always stay focused on the specific topic provided.`;
 
     const userPrompt = contentType ? 
-      `Generate ${contentType} content for the topic: "${topic || message}"
+      `Topic: ${topic || message}
       Difficulty Level: ${difficulty || 'medium'}
-      ${count ? `Number of items: ${count}` : ''}
+      Subject Context: ${subject || 'general'}
       
-      Focus exclusively on "${topic || message}" and ensure all content is:
-      - Factually accurate and educationally sound
-      - Directly relevant to the specified topic
-      - Appropriate for the ${difficulty || 'medium'} difficulty level
-      - Well-structured and clear for students
-      
-      Do not include unrelated concepts or subjects.` 
+      Generate ${contentType} content STRICTLY for "${topic || message}" ONLY. Focus exclusively on the provided topic and ensure all content is accurate, relevant, and directly related to "${topic || message}". DO NOT include any concepts from other subjects or unrelated topics.` 
       : message;
 
     const messages = [
@@ -201,8 +218,8 @@ Be encouraging, clear, and pedagogically sound.`;
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: messages,
-        max_tokens: 2000,
-        temperature: 0.2, // Low temperature for consistent, focused output
+        max_tokens: 1500,
+        temperature: 0.1, // Very low temperature for more focused, consistent output
       }),
     });
 

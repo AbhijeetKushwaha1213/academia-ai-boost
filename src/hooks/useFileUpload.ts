@@ -1,150 +1,122 @@
-
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface UploadOptions {
-  bucket: string;
-  folder?: string;
-  maxSize?: number; // in bytes
-  allowedTypes?: string[];
-}
+import { supabase } from '../lib/supabase';
+import { useAuth } from './useAuth';
 
 export const useFileUpload = () => {
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const { toast } = useToast();
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const uploadFile = async (
     file: File,
-    options: UploadOptions
-  ): Promise<string | null> => {
-    const {
-      bucket,
-      folder = '',
-      maxSize = 5 * 1024 * 1024, // 5MB default
-      allowedTypes = ['image/*', 'application/pdf', 'text/*']
-    } = options;
-
-    // Validate file size
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSize / 1024 / 1024}MB`,
-        variant: "destructive",
-      });
-      return null;
-    }
-
-    // Validate file type
-    const isValidType = allowedTypes.some(type => {
-      if (type.endsWith('/*')) {
-        return file.type.startsWith(type.replace('/*', '/'));
-      }
-      return file.type === type;
-    });
-
-    if (!isValidType) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select a supported file type",
-        variant: "destructive",
-      });
-      return null;
-    }
+    bucket: 'avatars' | 'documents',
+    path?: string
+  ) => {
+    if (!user) throw new Error('User not authenticated');
 
     setUploading(true);
-    setProgress(0);
+    setUploadProgress(0);
 
     try {
-      // Generate unique filename
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${file.name}`;
-      const filePath = folder ? `${folder}/${fileName}` : fileName;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${path || Date.now()}.${fileExt}`;
 
-      // Upload file to Supabase Storage
-      const { data, error } = await supabase.storage
+      // Upload file to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, {
+        .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
 
-      if (error) {
-        throw error;
-      }
+      if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: urlData } = supabase.storage
+      const { data: { publicUrl } } = supabase.storage
         .from(bucket)
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      setProgress(100);
-      
-      toast({
-        title: "Upload successful",
-        description: "File has been uploaded successfully",
-      });
+      // Save file info to database
+      const { data: fileData, error: dbError } = await supabase
+        .from('user_files')
+        .insert({
+          user_id: user.id,
+          file_name: file.name,
+          file_path: uploadData.path,
+          file_type: file.type,
+          file_size: file.size,
+          upload_type: bucket === 'avatars' ? 'avatar' : 'document'
+        })
+        .select()
+        .single();
 
-      return urlData.publicUrl;
-    } catch (error: any) {
+      if (dbError) throw dbError;
+
+      setUploadProgress(100);
+      return { url: publicUrl, data: fileData };
+    } catch (error) {
       console.error('Upload error:', error);
-      
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload file",
-        variant: "destructive",
-      });
-      
-      return null;
+      throw error;
     } finally {
       setUploading(false);
-      setProgress(0);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
-  const deleteFile = async (bucket: string, filePath: string): Promise<boolean> => {
+  const deleteFile = async (filePath: string, bucket: 'avatars' | 'documents') => {
+    if (!user) throw new Error('User not authenticated');
+
     try {
-      const { error } = await supabase.storage
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
         .from(bucket)
         .remove([filePath]);
 
-      if (error) {
-        throw error;
-      }
+      if (storageError) throw storageError;
 
-      toast({
-        title: "File deleted",
-        description: "File has been deleted successfully",
-      });
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('user_files')
+        .delete()
+        .eq('file_path', filePath)
+        .eq('user_id', user.id);
 
-      return true;
-    } catch (error: any) {
+      if (dbError) throw dbError;
+    } catch (error) {
       console.error('Delete error:', error);
-      
-      toast({
-        title: "Delete failed",
-        description: error.message || "Failed to delete file",
-        variant: "destructive",
-      });
-      
-      return false;
+      throw error;
     }
   };
 
-  const getFileUrl = (bucket: string, filePath: string): string => {
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(filePath);
-    
-    return data.publicUrl;
+  const getUserFiles = async (uploadType?: 'avatar' | 'document') => {
+    if (!user) return [];
+
+    try {
+      let query = supabase
+        .from('user_files')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (uploadType) {
+        query = query.eq('upload_type', uploadType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      return [];
+    }
   };
 
   return {
+    uploading,
+    uploadProgress,
     uploadFile,
     deleteFile,
-    getFileUrl,
-    uploading,
-    progress
+    getUserFiles
   };
 };

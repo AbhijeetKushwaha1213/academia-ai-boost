@@ -1,200 +1,614 @@
-
 import React, { useState } from 'react';
-import { useAuth } from '../auth/AuthProvider';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Wand2, Plus, Loader2, BookOpen, Brain, FileQuestion, GitBranch, FileText, Upload, FileCheck, X, Eye, Search } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Copy, BookOpen, FileText, Brain, Zap } from 'lucide-react';
+import { useStudyMaterials } from '@/hooks/useStudyMaterials';
+import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { FlashcardViewer } from '@/components/flashcards/FlashcardViewer';
+import { QuizViewer } from '@/components/flashcards/QuizViewer';
+import { MindMapViewer } from '@/components/flashcards/MindMapViewer';
+import { useFlashcards } from '@/hooks/useFlashcards';
+
+type MaterialType = 'flashcards' | 'mindmaps' | 'quizzes' | 'diagrams' | 'notes';
 
 interface GeneratedMaterial {
   id: string;
-  type: 'flashcards' | 'quiz' | 'summary' | 'mindmap';
+  type: MaterialType;
   title: string;
   content: any;
-  difficulty: 'easy' | 'medium' | 'hard';
   topic: string;
+  difficulty: 'easy' | 'medium' | 'hard';
   created_at: string;
+  selected: boolean;
 }
 
 export const AIStudyMaterialGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { createMultipleMaterials, isBulkCreating } = useStudyMaterials();
+  const { createFlashcard, createStudyMaterial } = useFlashcards();
+  const { generateContent, isLoading } = useAIAssistant();
+  const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [materialType, setMaterialType] = useState<'flashcards' | 'quiz' | 'summary' | 'mindmap'>('flashcards');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [materialType, setMaterialType] = useState<MaterialType>('flashcards');
+  const [count, setCount] = useState('5');
+  const [generatedMaterials, setGeneratedMaterials] = useState<GeneratedMaterial[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedMaterial, setGeneratedMaterial] = useState<GeneratedMaterial | null>(null);
-  const [recentMaterials, setRecentMaterials] = useState<GeneratedMaterial[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploadedContent, setUploadedContent] = useState('');
+  const [viewingMaterial, setViewingMaterial] = useState<any>(null);
+  const [viewerType, setViewerType] = useState<string>('');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  const generateMaterial = async () => {
-    if (!topic.trim()) {
+  const materialIcons = {
+    flashcards: BookOpen,
+    mindmaps: Brain,
+    quizzes: FileQuestion,
+    diagrams: GitBranch,
+    notes: FileText
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (50KB limit)
+    if (file.size > 50 * 1024) {
       toast({
-        title: "Topic Required",
-        description: "Please enter a topic to generate study materials.",
+        title: "File too large",
+        description: "Please upload files smaller than 50KB.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsGenerating(true);
-    
-    try {
-      // Simulate AI generation with realistic content
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockContent = generateMockContent(materialType, topic, difficulty);
-      
-      const newMaterial: GeneratedMaterial = {
-        id: Date.now().toString(),
-        type: materialType,
-        title: `${topic} - ${materialType}`,
-        content: mockContent,
-        difficulty,
-        topic,
-        created_at: new Date().toISOString()
-      };
+    // Check file type
+    const allowedTypes = ['text/plain', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Unsupported file type",
+        description: "Please upload a PDF or text file.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      setGeneratedMaterial(newMaterial);
-      setRecentMaterials(prev => [newMaterial, ...prev.slice(0, 4)]);
+    try {
+      let fileContent = '';
+      
+      if (file.type === 'text/plain') {
+        fileContent = await file.text();
+      } else if (file.type === 'application/pdf') {
+        // For now, show message about PDF support
+        toast({
+          title: "PDF Processing",
+          description: "PDF text extraction will be implemented. Using filename as topic for now.",
+        });
+        fileContent = `PDF content from: ${file.name}`;
+      }
+
+      setUploadedFile(file.name);
+      setUploadedContent(fileContent);
       
       toast({
-        title: "Study Material Generated!",
-        description: `Successfully created ${materialType} for ${topic}`,
+        title: "File uploaded successfully",
+        description: `${file.name} has been processed and is ready for generation.`,
       });
     } catch (error) {
-      console.error('Error generating material:', error);
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to process the file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const clearFile = () => {
+    setUploadedFile(null);
+    setUploadedContent('');
+  };
+
+  const generateMaterial = async () => {
+    const finalContent = content.trim() || uploadedContent.trim();
+    
+    if (!finalContent && !topic.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please provide either content to study or a topic.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('AIStudyMaterialGenerator: Starting enhanced generation:', { 
+        type: materialType, 
+        finalContent, 
+        topic, 
+        difficulty, 
+        count 
+      });
+
+      const subject = user?.userType === 'college' ? user?.branch : user?.examType;
+      const aiResponse = await generateContent(
+        materialType,
+        finalContent || topic,
+        difficulty,
+        parseInt(count),
+        subject
+      );
+
+      console.log('AIStudyMaterialGenerator: Received AI response:', aiResponse);
+
+      // Parse the AI response based on content type
+      let materials = [];
+      const numItems = parseInt(count);
+      const materialTopic = topic || finalContent.substring(0, 30) + '...';
+
+      switch (materialType) {
+        case 'flashcards':
+          if (aiResponse.flashcards) {
+            materials = aiResponse.flashcards.map((card: any, i: number) => ({
+              id: `generated-${Date.now()}-${i}`,
+              type: materialType,
+              title: `${materialTopic} - Flashcard ${i + 1}`,
+              content: card,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }));
+          }
+          break;
+
+        case 'mindmaps':
+          if (aiResponse.mindmap) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Mind Map`,
+              content: aiResponse.mindmap,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'quizzes':
+          if (aiResponse.quiz) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Quiz`,
+              content: { questions: aiResponse.quiz },
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'diagrams':
+          if (aiResponse.diagram) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Diagram`,
+              content: aiResponse.diagram,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+
+        case 'notes':
+          if (aiResponse.notes) {
+            materials = [{
+              id: `generated-${Date.now()}`,
+              type: materialType,
+              title: `${materialTopic} - Notes`,
+              content: aiResponse.notes,
+              topic: materialTopic,
+              difficulty,
+              created_at: new Date().toISOString(),
+              selected: true
+            }];
+          }
+          break;
+      }
+
+      if (materials.length === 0) {
+        throw new Error('No valid content generated');
+      }
+
+      console.log('AIStudyMaterialGenerator: Processed materials:', materials);
+      setGeneratedMaterials(materials);
+
+      toast({
+        title: "Enhanced Content Generated! 🎉",
+        description: `Generated ${materials.length} high-quality ${materialType}. Review and save your content.`,
+      });
+    } catch (error) {
+      console.error('AIStudyMaterialGenerator: Error generating materials:', error);
       toast({
         title: "Generation Failed",
-        description: "There was an error generating your study material. Please try again.",
+        description: "Failed to generate study materials. Please try again with different content.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleMaterialSelection = (materialId: string) => {
+    setGeneratedMaterials(prev => 
+      prev.map(material => 
+        material.id === materialId ? { ...material, selected: !material.selected } : material
+      )
+    );
+  };
+
+  const saveSelectedMaterials = async () => {
+    const selectedMaterials = generatedMaterials.filter(material => material.selected);
+    if (selectedMaterials.length === 0) {
+      toast({
+        title: "No Materials Selected",
+        description: "Please select at least one material to save.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.user_id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      console.log('AIStudyMaterialGenerator: Saving selected materials:', selectedMaterials);
+      
+      for (const material of selectedMaterials) {
+        try {
+          const sourceInfo = uploadedFile || content.substring(0, 50) || topic;
+          
+          // Save to study_materials table for all types
+          await createStudyMaterial({
+            title: material.title,
+            content: material.content,
+            type: material.type,
+            topic: material.topic,
+            difficulty: material.difficulty,
+            tags: [material.type, material.difficulty, material.topic].filter(Boolean),
+            source: sourceInfo,
+          });
+
+          // Additionally save to flashcards table if it's a flashcard
+          if (material.type === 'flashcards' && material.content) {
+            await createFlashcard({
+              title: material.title,
+              question: material.content.question || '',
+              answer: material.content.answer || '',
+              difficulty: material.difficulty,
+              tags: [material.topic, material.difficulty].filter(Boolean),
+            });
+          }
+          
+          successCount++;
+          console.log('Successfully saved material:', material.title);
+        } catch (error) {
+          console.error('Error saving material:', material.title, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Content Saved Successfully! 🎉",
+          description: `Successfully saved ${successCount} items to your study vault.${errorCount > 0 ? ` ${errorCount} items failed to save.` : ''}`,
+        });
+        
+        // Reset form on success
+        setGeneratedMaterials([]);
+        setContent('');
+        setTopic('');
+        setUploadedContent('');
+        setUploadedFile(null);
+      } else {
+        throw new Error('All items failed to save');
+      }
+    } catch (error) {
+      console.error('AIStudyMaterialGenerator: Error in saving process:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save study materials. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      setIsCreating(false);
     }
   };
 
-  const generateMockContent = (type: string, topic: string, difficulty: string) => {
-    switch (type) {
+  const viewMaterial = (material: any) => {
+    setViewingMaterial(material);
+    setViewerType(material.type);
+  };
+
+  const renderMaterialPreview = (material: GeneratedMaterial) => {
+    const IconComponent = materialIcons[material.type];
+    
+    return (
+      <Card 
+        key={material.id} 
+        className={`p-4 transition-all ${
+          material.selected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1" onClick={() => toggleMaterialSelection(material.id)}>
+            <div className="flex items-center space-x-2 mb-2">
+              <IconComponent className="w-4 h-4 text-purple-600" />
+              <h4 className="font-medium text-gray-900">{material.title}</h4>
+              <Badge variant="outline" className="text-xs">
+                {material.difficulty}
+              </Badge>
+            </div>
+            
+            {/* Enhanced preview content */}
+            {material.type === 'flashcards' && (
+              <div className="text-sm text-gray-600">
+                <p><strong>Q:</strong> {material.content.question}</p>
+                <p className="mt-1"><strong>A:</strong> {material.content.answer?.substring(0, 100)}...</p>
+              </div>
+            )}
+            
+            {material.type === 'mindmaps' && (
+              <div className="text-sm text-gray-600">
+                <p><strong>Central Topic:</strong> {material.content.central_topic}</p>
+                <p><strong>Branches:</strong> {material.content.branches?.length || 0} main branches</p>
+              </div>
+            )}
+            
+            {material.type === 'quizzes' && (
+              <div className="text-sm text-gray-600">
+                <p><strong>Questions:</strong> {material.content.questions?.length || 0} quiz questions</p>
+                <p><strong>Type:</strong> Multiple choice with explanations</p>
+              </div>
+            )}
+            
+            {material.type === 'diagrams' && (
+              <div className="text-sm text-gray-600">
+                <p><strong>Title:</strong> {material.content.title}</p>
+                <p><strong>Components:</strong> {material.content.components?.length || 0} elements</p>
+              </div>
+            )}
+            
+            {material.type === 'notes' && (
+              <div className="text-sm text-gray-600">
+                <p><strong>Key Points:</strong> {material.content.key_points?.length || 0} main concepts</p>
+                <p>{material.content.summary?.substring(0, 100)}...</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="ml-4 flex flex-col space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                viewMaterial(material);
+              }}
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Preview
+            </Button>
+            
+            <div>
+              {material.selected ? (
+                <div className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">✓</span>
+                </div>
+              ) : (
+                <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+  // Show viewer if material is being viewed
+  if (viewingMaterial) {
+    switch (viewerType) {
       case 'flashcards':
-        return {
-          cards: [
-            { front: `What is ${topic}?`, back: `${topic} is a fundamental concept in ${user?.user_type === 'college' ? 'your studies' : user?.exam_type || 'your preparation'}.` },
-            { front: `Key principles of ${topic}`, back: `The main principles include understanding the core concepts and practical applications.` },
-            { front: `Applications of ${topic}`, back: `${topic} can be applied in various real-world scenarios and problem-solving situations.` }
-          ]
-        };
-      case 'quiz':
-        return {
-          questions: [
-            {
-              question: `What is the primary focus of ${topic}?`,
-              options: ['Option A', 'Option B', 'Option C', 'Option D'],
-              correct: 0
-            },
-            {
-              question: `Which of the following best describes ${topic}?`,
-              options: ['Description A', 'Description B', 'Description C', 'Description D'],
-              correct: 1
-            }
-          ]
-        };
-      case 'summary':
-        return {
-          summary: `${topic} is an important subject that requires understanding of key concepts and principles. This summary covers the essential points you need to know for ${user?.user_type === 'college' ? 'your academic success' : 'exam preparation'}.`,
-          keyPoints: [
-            `Understanding the fundamentals of ${topic}`,
-            'Practical applications and examples',
-            'Common misconceptions to avoid',
-            'Tips for effective study and retention'
-          ]
-        };
-      case 'mindmap':
-        return {
-          central: topic,
-          branches: [
-            { name: 'Key Concepts', children: ['Concept A', 'Concept B', 'Concept C'] },
-            { name: 'Applications', children: ['Application 1', 'Application 2', 'Application 3'] },
-            { name: 'Examples', children: ['Example 1', 'Example 2', 'Example 3'] }
-          ]
-        };
+        return (
+          <FlashcardViewer
+            flashcards={[viewingMaterial.content]}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
+      case 'quizzes':
+        return (
+          <QuizViewer
+            questions={viewingMaterial.content.questions || []}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
+      case 'mindmaps':
+        return (
+          <MindMapViewer
+            mindmap={viewingMaterial.content}
+            title={viewingMaterial.title}
+            difficulty={viewingMaterial.difficulty}
+            onClose={() => {
+              setViewingMaterial(null);
+              setViewerType('');
+            }}
+          />
+        );
       default:
-        return {};
+        return (
+          <div className="space-y-6">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setViewingMaterial(null);
+                setViewerType('');
+              }}
+            >
+              ← Back to Generator
+            </Button>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">{viewingMaterial.title}</h3>
+              <pre className="whitespace-pre-wrap text-sm">
+                {JSON.stringify(viewingMaterial.content, null, 2)}
+              </pre>
+            </Card>
+          </div>
+        );
     }
-  };
-
-  const copyToClipboard = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast({
-      title: "Copied to Clipboard",
-      description: "Content has been copied to your clipboard.",
-    });
-  };
-
-  const downloadMaterial = () => {
-    if (!generatedMaterial) return;
-    
-    const dataStr = JSON.stringify(generatedMaterial, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `${generatedMaterial.title.replace(/\s+/g, '_')}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
+  }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">AI Study Material Generator</h1>
-        <p className="text-gray-600">Generate personalized study materials using AI</p>
-      </div>
+    <div className="space-y-6 pb-20">
+      <Card className="p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Wand2 className="w-5 h-5 text-purple-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Enhanced AI Study Material Generator</h2>
+        </div>
 
-      {/* Generation Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            Generate New Material
-          </CardTitle>
-          <CardDescription>
-            Create custom study materials tailored to your learning needs
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Topic</label>
+        <div className="space-y-4">
+          {/* Material Type Selection */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              What would you like to generate?
+            </label>
+            <Select value={materialType} onValueChange={(value: MaterialType) => setMaterialType(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="flashcards">📚 Smart Flashcards</SelectItem>
+                <SelectItem value="mindmaps">🧠 Interactive Mind Maps</SelectItem>
+                <SelectItem value="quizzes">❓ Engaging Quizzes</SelectItem>
+                <SelectItem value="diagrams">📊 Visual Diagrams</SelectItem>
+                <SelectItem value="notes">📝 Structured Notes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* File Upload */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700">Upload Study Material</label>
+            
+            {!uploadedFile ? (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2">Upload your notes, documents, or study materials</p>
+                <p className="text-xs text-gray-500 mb-3">Supported: PDF, TXT (Max: 50KB)</p>
+                <Input
+                  type="file"
+                  accept=".pdf,.txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  Choose File
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <FileCheck className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">{uploadedFile}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFile}
+                  className="text-green-600 hover:text-green-800"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center text-sm text-gray-500">OR</div>
+
+          {/* Manual Content Input */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Paste Study Content
+            </label>
             <Textarea
-              placeholder="Enter the topic you want to study (e.g., 'Photosynthesis', 'Calculus Integration', 'World War II')"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              className="min-h-[100px]"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Paste your study material, notes, or textbook content here..."
+              rows={4}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Material Type</label>
-              <Select value={materialType} onValueChange={(value: any) => setMaterialType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flashcards">Flashcards</SelectItem>
-                  <SelectItem value="quiz">Quiz</SelectItem>
-                  <SelectItem value="summary">Summary</SelectItem>
-                  <SelectItem value="mindmap">Mind Map</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="text-center text-sm text-gray-500">OR</div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Difficulty Level</label>
-              <Select value={difficulty} onValueChange={(value: any) => setDifficulty(value)}>
+          {/* Topic Input */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Enter Topic/Subject
+            </label>
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g., Photosynthesis, World War II, Calculus, Machine Learning..."
+            />
+          </div>
+
+          {/* Configuration Options */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Difficulty Level
+              </label>
+              <Select value={difficulty} onValueChange={(value: 'easy' | 'medium' | 'hard') => setDifficulty(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -205,167 +619,75 @@ export const AIStudyMaterialGenerator = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Number to Generate
+              </label>
+              <Select value={count} onValueChange={setCount}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">3 items</SelectItem>
+                  <SelectItem value="5">5 items</SelectItem>
+                  <SelectItem value="10">10 items</SelectItem>
+                  <SelectItem value="15">15 items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {/* Generate Button */}
           <Button 
-            onClick={generateMaterial} 
-            disabled={isGenerating || !topic.trim()}
-            className="w-full"
+            onClick={generateMaterial}
+            disabled={isLoading || (!content.trim() && !topic.trim() && !uploadedContent.trim())}
+            className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            {isGenerating ? (
+            {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
+                Generating Enhanced {materialType}...
               </>
             ) : (
               <>
-                <Zap className="w-4 h-4 mr-2" />
-                Generate Study Material
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Enhanced {materialType.charAt(0).toUpperCase() + materialType.slice(1)}
               </>
             )}
           </Button>
-        </CardContent>
+        </div>
       </Card>
 
-      {/* Generated Material Display */}
-      {generatedMaterial && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  {generatedMaterial.title}
-                </CardTitle>
-                <CardDescription>
-                  <Badge variant="outline" className="mr-2">
-                    {generatedMaterial.type}
-                  </Badge>
-                  <Badge variant="outline">
-                    {generatedMaterial.difficulty}
-                  </Badge>
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(JSON.stringify(generatedMaterial.content, null, 2))}>
-                  <Copy className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={downloadMaterial}>
-                  <Download className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {generatedMaterial.type === 'flashcards' && (
-                <div className="space-y-2">
-                  {generatedMaterial.content.cards?.map((card: any, index: number) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="font-medium text-sm text-gray-500 mb-1">Question {index + 1}</div>
-                      <div className="font-semibold mb-2">{card.front}</div>
-                      <div className="text-gray-700">{card.back}</div>
-                    </div>
-                  ))}
-                </div>
+      {/* Generated Materials Preview */}
+      {generatedMaterials.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Generated {materialType.charAt(0).toUpperCase() + materialType.slice(1)}
+            </h3>
+            <Button 
+              onClick={saveSelectedMaterials}
+              disabled={isCreating || !generatedMaterials.some(material => material.selected)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Save Selected ({generatedMaterials.filter(material => material.selected).length})
+                </>
               )}
+            </Button>
+          </div>
 
-              {generatedMaterial.type === 'quiz' && (
-                <div className="space-y-4">
-                  {generatedMaterial.content.questions?.map((q: any, index: number) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="font-semibold mb-3">{q.question}</div>
-                      <div className="space-y-2">
-                        {q.options.map((option: string, optIndex: number) => (
-                          <div 
-                            key={optIndex} 
-                            className={`p-2 rounded ${optIndex === q.correct ? 'bg-green-100 border-green-300' : 'bg-gray-50'}`}
-                          >
-                            {option} {optIndex === q.correct && '✓'}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {generatedMaterial.type === 'summary' && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Summary</h3>
-                    <p className="text-gray-700">{generatedMaterial.content.summary}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Key Points</h3>
-                    <ul className="list-disc list-inside space-y-1">
-                      {generatedMaterial.content.keyPoints?.map((point: string, index: number) => (
-                        <li key={index} className="text-gray-700">{point}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {generatedMaterial.type === 'mindmap' && (
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-semibold">
-                      {generatedMaterial.content.central}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {generatedMaterial.content.branches?.map((branch: any, index: number) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <h3 className="font-semibold mb-2">{branch.name}</h3>
-                        <ul className="list-disc list-inside space-y-1">
-                          {branch.children.map((child: string, childIndex: number) => (
-                            <li key={childIndex} className="text-sm text-gray-700">{child}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Materials */}
-      {recentMaterials.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Recent Materials
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {recentMaterials.map((material) => (
-                <div
-                  key={material.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setGeneratedMaterial(material)}
-                >
-                  <div>
-                    <div className="font-medium">{material.title}</div>
-                    <div className="text-sm text-gray-500">
-                      <Badge variant="outline" className="mr-1 text-xs">
-                        {material.type}
-                      </Badge>
-                      {new Date(material.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
+          <div className="space-y-4">
+            {generatedMaterials.map(renderMaterialPreview)}
+          </div>
         </Card>
       )}
     </div>

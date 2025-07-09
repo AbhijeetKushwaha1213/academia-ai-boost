@@ -1,20 +1,14 @@
-
 export interface UserProfile {
   id: string;
-  user_id: string;
-  name: string;
   email: string;
-  user_type: 'exam' | 'college';
-  exam_type?: string;
-  college?: string;
-  branch?: string;
+  full_name?: string;
+  avatar_url?: string;
+  mode?: 'college' | 'exam_preparation';
   semester?: number;
-  exam_date?: string;
-  study_streak: number;
-  total_study_hours: number;
-  current_level: number;
-  experience_points: number;
-  avatar?: string;
+  college_name?: string;
+  target_exam?: string;
+  attempt_year?: number;
+  onboarding_completed?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -35,15 +29,13 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: any;
 }
 
 export interface ChatSession {
   id: string;
   user_id: string;
   title: string;
-  topic: string;
   created_at: string;
   updated_at: string;
-  messages?: ChatMessage[];
 }

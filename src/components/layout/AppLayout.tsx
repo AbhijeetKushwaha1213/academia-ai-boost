@@ -1,26 +1,41 @@
-
 import React from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
 import ChatInterface from '../chat/ChatInterface';
 import ProfileUpload from '../profile/ProfileUpload';
-import { UserProfile } from '../../types/user';
 
-interface AppLayoutProps {
-  user: UserProfile;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  handleSignOut: () => Promise<void>;
-  isOnline: boolean;
-}
+const AppLayout: React.FC = () => {
+  const { user, profile, loading } = useAuth();
 
-const AppLayout: React.FC<AppLayoutProps> = ({ 
-  user, 
-  activeTab, 
-  setActiveTab, 
-  handleSignOut, 
-  isOnline 
-}) => {
-  console.log('AppLayout render - User:', user?.email, 'ActiveTab:', activeTab);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Study Assistant</h1>
+          <p className="text-gray-600 mb-6">Please sign in to continue</p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding if user hasn't completed it
+  if (!profile?.onboarding_completed) {
+    return <OnboardingFlow />;
+  }
 
   // Main app layout with navigation
   return (
@@ -29,59 +44,36 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl font-bold text-gray-900">StudyMate AI</h1>
-              <div className="hidden md:flex items-center gap-6">
+              <h1 className="text-xl font-bold text-gray-900">Study Assistant</h1>
+              <div className="flex items-center gap-6">
                 <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`font-medium transition-colors ${
-                    activeTab === 'chat' 
-                      ? 'text-blue-600' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
+                  onClick={() => window.location.href = '/chat'}
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
                 >
-                  AI Chat
+                  Chat
                 </button>
                 <button
-                  onClick={() => setActiveTab('profile')}
-                  className={`font-medium transition-colors ${
-                    activeTab === 'profile' 
-                      ? 'text-blue-600' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
+                  onClick={() => window.location.href = '/profile'}
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
                 >
                   Profile
-                </button>
-                <button
-                  onClick={() => setActiveTab('home')}
-                  className={`font-medium transition-colors ${
-                    activeTab === 'home' 
-                      ? 'text-blue-600' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  Dashboard
                 </button>
               </div>
             </div>
             
             <div className="flex items-center gap-4">
               <div className="text-sm text-gray-600">
-                Welcome, {user?.name || user?.email}
+                Welcome, {profile?.full_name || user.email}
               </div>
-              {user?.avatar && (
+              {profile?.avatar_url && (
                 <img
-                  src={user.avatar}
+                  src={profile.avatar_url}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
                 />
               )}
-              {!isOnline && (
-                <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                  Offline
-                </span>
-              )}
               <button
-                onClick={handleSignOut}
+                onClick={() => window.location.href = '/logout'}
                 className="text-gray-700 hover:text-red-600 font-medium transition-colors"
               >
                 Sign Out
@@ -92,34 +84,34 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       </nav>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Route to different components based on activeTab */}
-        {activeTab === 'chat' && <ChatInterface />}
-        {activeTab === 'profile' && <ProfileUpload />}
+        {/* Route to different components based on URL */}
+        {window.location.pathname === '/chat' && <ChatInterface />}
+        {window.location.pathname === '/profile' && <ProfileUpload />}
         
-        {/* Clean dashboard without debug elements */}
-        {activeTab === 'home' && (
+        {/* Default dashboard */}
+        {window.location.pathname === '/' && (
           <div className="text-center py-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Welcome to StudyMate AI! 🎓
+              Welcome to your Study Assistant
             </h2>
             <p className="text-gray-600 mb-8">
-              {user?.user_type === 'college' 
-                ? `${user.college} - Semester ${user.semester}`
-                : `Preparing for ${user.exam_type} - ${user.exam_date}`
+              {profile?.mode === 'college' 
+                ? `${profile.college_name} - Semester ${profile.semester}`
+                : `Preparing for ${profile.target_exam} - ${profile.attempt_year}`
               }
             </p>
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => setActiveTab('chat')}
+                onClick={() => window.location.href = '/chat'}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                🤖 Start AI Chat
+                Start Chatting
               </button>
               <button
-                onClick={() => setActiveTab('profile')}
+                onClick={() => window.location.href = '/profile'}
                 className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
               >
-                👤 Manage Profile
+                Manage Profile
               </button>
             </div>
           </div>

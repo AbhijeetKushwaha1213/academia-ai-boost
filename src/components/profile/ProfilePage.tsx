@@ -29,7 +29,7 @@ export const ProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editedName, setEditedName] = useState(user?.name || '');
   const [editedCollege, setEditedCollege] = useState(user?.college || '');
-  const [editedExamType, setEditedExamType] = useState(user?.exam_type || '');
+  const [editedExamType, setEditedExamType] = useState(user?.examType || '');
 
   const handleSaveProfile = async () => {
     if (!user?.user_id) return;
@@ -82,7 +82,7 @@ export const ProfilePage = () => {
   const handleCancelEdit = () => {
     setEditedName(user?.name || '');
     setEditedCollege(user?.college || '');
-    setEditedExamType(user?.exam_type || '');
+    setEditedExamType(user?.examType || '');
     setIsEditing(false);
   };
 
@@ -123,7 +123,7 @@ export const ProfilePage = () => {
                 <h2 className="text-xl font-semibold text-gray-900">{user?.name}</h2>
                 <p className="text-gray-600">{user?.email}</p>
                 <Badge className="mt-2">
-                  {user?.user_type === 'college' ? 'College Student' : 'Exam Preparation'}
+                  {user?.userType === 'college' ? 'College Student' : 'Exam Preparation'}
                 </Badge>
               </div>
               <Button
@@ -152,7 +152,7 @@ export const ProfilePage = () => {
               />
             </div>
 
-            {user?.user_type === 'college' && (
+            {user?.userType === 'college' && (
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   College/University
@@ -165,7 +165,7 @@ export const ProfilePage = () => {
               </div>
             )}
 
-            {user?.user_type === 'exam' && (
+            {user?.userType === 'exam' && (
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Exam Type
@@ -258,7 +258,7 @@ export const ProfilePage = () => {
             <Target className="w-5 h-5 text-gray-400" />
             <span className="text-gray-600">Study Mode:</span>
             <Badge variant="outline">
-              {user?.user_type === 'college' ? 'College Student' : 'Exam Preparation'}
+              {user?.userType === 'college' ? 'College Student' : 'Exam Preparation'}
             </Badge>
           </div>
           {user?.college && (
@@ -268,11 +268,11 @@ export const ProfilePage = () => {
               <span className="font-medium">{user.college}</span>
             </div>
           )}
-          {user?.exam_type && (
+          {user?.examType && (
             <div className="flex items-center space-x-3">
               <Target className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">Exam Type:</span>
-              <span className="font-medium">{user.exam_type}</span>
+              <span className="font-medium">{user.examType}</span>
             </div>
           )}
         </div>

@@ -2,18 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
-import OnboardingFlow from './onboarding/OnboardingFlow';
+import { OnboardingFlow } from './onboarding/OnboardingFlow';
+import { AppLayout } from './layout/AppLayout';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Hero } from './Hero';
-import { Features } from './Features';
-import { Dashboard } from './Dashboard';
-import { StudyProgress } from './StudyProgress';
-import { AIAssistant } from './AIAssistant';
 
 export const MainApp = () => {
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
@@ -28,7 +24,7 @@ export const MainApp = () => {
     isAuthenticated, 
     isLoading, 
     user: user?.id, 
-    userType: user?.user_type,
+    userType: user?.userType,
     activeTab 
   });
 
@@ -118,8 +114,8 @@ export const MainApp = () => {
   }
 
   // Authenticated but no user type selected - show onboarding flow
-  if (!user?.user_type) {
-    console.log('MainApp: User authenticated but no user_type, showing OnboardingFlow');
+  if (!user?.userType) {
+    console.log('MainApp: User authenticated but no userType, showing OnboardingFlow');
     return (
       <ErrorBoundary>
         <OnboardingFlow />
@@ -127,7 +123,7 @@ export const MainApp = () => {
     );
   }
 
-  console.log('MainApp: Rendering main app with user authenticated');
+  console.log('MainApp: Rendering main app with activeTab:', activeTab);
 
   const handleSignOut = async () => {
     try {
@@ -148,52 +144,20 @@ export const MainApp = () => {
     }
   };
 
-  // Show the original dashboard design
+  const handleTabChange = (tab: string) => {
+    console.log('MainApp: Tab change requested:', tab);
+    setActiveTab(tab);
+  };
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        {/* Header */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold text-gray-900">StudyMate AI</h1>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-600">
-                  Welcome, {user?.name || user?.email}
-                </div>
-                {user?.avatar && (
-                  <img
-                    src={user.avatar}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                )}
-                {!isOnline && (
-                  <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                    Offline
-                  </span>
-                )}
-                <button
-                  onClick={handleSignOut}
-                  className="text-gray-700 hover:text-red-600 font-medium transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content - Original Dashboard Design */}
-        <Hero />
-        <Features />
-        <Dashboard />
-        <StudyProgress />
-        <AIAssistant />
-      </div>
+      <AppLayout 
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        handleSignOut={handleSignOut}
+        isOnline={isOnline}
+      />
     </ErrorBoundary>
   );
 };
