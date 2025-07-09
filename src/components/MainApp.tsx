@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthProvider';
 import { SignInPage } from './auth/SignInPage';
-import { OnboardingFlow } from './onboarding/OnboardingFlow';
-import { AppLayout } from './layout/AppLayout';
+import OnboardingFlow from './onboarding/OnboardingFlow';
+import AppLayout from './layout/AppLayout';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';

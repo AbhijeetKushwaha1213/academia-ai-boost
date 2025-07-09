@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
 import ChatInterface from '../chat/ChatInterface';
 import ProfileUpload from '../profile/ProfileUpload';
+import { supabase } from '../../lib/supabase';
 
 const AppLayout: React.FC = () => {
   const { user, profile, loading } = useAuth();

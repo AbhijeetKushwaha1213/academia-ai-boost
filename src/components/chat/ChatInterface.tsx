@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { Send, Plus, MessageCircle, Trash2, Edit2, Check, X } from 'lucide-react';
@@ -233,7 +234,7 @@ const ChatInterface: React.FC = () => {
               >
                 <p className="text-sm">{message.content}</p>
                 <p className="text-xs mt-1 opacity-70">
-                  {new Date(message.created_at).toLocaleTimeString()}
+                  {new Date(message.timestamp).toLocaleTimeString()}
                 </p>
               </div>
             </div>
