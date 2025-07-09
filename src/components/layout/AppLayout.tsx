@@ -66,11 +66,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             
             <div className="flex items-center gap-4">
               <div className="text-sm text-gray-600">
-                Welcome, {user?.name || user?.email}
+                Welcome, {user?.full_name || user?.email}
               </div>
-              {user?.avatar && (
+              {user?.avatar_url && (
                 <img
-                  src={user.avatar}
+                  src={user.avatar_url}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
                 />
@@ -103,9 +103,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
               Welcome to StudyMate AI! 🎓
             </h2>
             <p className="text-gray-600 mb-8">
-              {user?.user_type === 'college' 
-                ? `${user.college} - ${user.branch} - Semester ${user.semester}`
-                : `Preparing for ${user.exam_type} - ${user.exam_date}`
+              {user?.mode === 'college' 
+                ? `${user.college_name} - Semester ${user.semester}`
+                : `Preparing for ${user.target_exam} - ${user.attempt_year}`
               }
             </p>
             <div className="flex justify-center gap-4">
