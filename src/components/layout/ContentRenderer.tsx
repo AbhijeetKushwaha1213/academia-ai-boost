@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CollegeDashboard } from '../dashboard/CollegeDashboard';
 import { ExamDashboard } from '../dashboard/ExamDashboard';
@@ -10,7 +11,6 @@ import { NewAchievementsPage } from '../achievements/NewAchievementsPage';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { DiscoverResources } from '../discover/DiscoverResources';
 import { useAuth } from '../auth/AuthProvider';
-
 import { ResourceSpace } from '../resources/ResourceSpace';
 
 interface ContentRendererProps {

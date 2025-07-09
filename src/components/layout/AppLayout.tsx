@@ -3,7 +3,6 @@ import React from 'react';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
 import ChatInterface from '../chat/ChatInterface';
 import ProfileUpload from '../profile/ProfileUpload';
-import { supabase } from '../../lib/supabase';
 import { UserProfile } from '../../types/user';
 
 interface AppLayoutProps {
@@ -67,11 +66,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             
             <div className="flex items-center gap-4">
               <div className="text-sm text-gray-600">
-                Welcome, {user?.full_name || user?.email}
+                Welcome, {user?.name || user?.email}
               </div>
-              {user?.avatar_url && (
+              {user?.avatar && (
                 <img
-                  src={user.avatar_url}
+                  src={user.avatar}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
                 />
@@ -97,16 +96,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         {activeTab === 'chat' && <ChatInterface />}
         {activeTab === 'profile' && <ProfileUpload />}
         
-        {/* Default dashboard */}
+        {/* Clean dashboard without debug elements */}
         {activeTab === 'home' && (
           <div className="text-center py-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Welcome to StudyMate AI! 🎓
             </h2>
             <p className="text-gray-600 mb-8">
-              {user?.mode === 'college' 
-                ? `${user.college_name} - Semester ${user.semester}`
-                : `Preparing for ${user.target_exam} - ${user.attempt_year}`
+              {user?.user_type === 'college' 
+                ? `${user.college} - ${user.branch} - Semester ${user.semester}`
+                : `Preparing for ${user.exam_type} - ${user.exam_date}`
               }
             </p>
             <div className="flex justify-center gap-4">
