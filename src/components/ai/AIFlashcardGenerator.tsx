@@ -8,13 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Wand2, Plus, Loader2 } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
+import { useStudyMaterials } from '@/hooks/useStudyMaterials';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileUploadComponent } from './FileUploadComponent';
 
 export const AIFlashcardGenerator = () => {
   const { user } = useAuth();
-  const { createFlashcard, createStudyMaterial } = useFlashcards();
+  const { createFlashcard } = useFlashcards();
+  const { createMaterial } = useStudyMaterials();
   const { toast } = useToast();
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -27,12 +29,11 @@ export const AIFlashcardGenerator = () => {
 
   const generateFlashcards = async () => {
     const finalContent = content.trim() || uploadedContent.trim();
-    const finalTopic = topic.trim();
     
-    if (!finalContent && !finalTopic) {
+    if (!finalContent && !topic.trim()) {
       toast({
         title: "Input Required",
-        description: "Please provide either content to study or a specific topic.",
+        description: "Please provide either content to study or a topic.",
         variant: "destructive",
       });
       return;
@@ -41,101 +42,45 @@ export const AIFlashcardGenerator = () => {
     setIsGenerating(true);
     
     try {
-      console.log('AIFlashcardGenerator: Starting generation with:', { finalContent, finalTopic, difficulty, count });
+      console.log('AIFlashcardGenerator: Starting generation with:', { finalContent, topic, difficulty, count });
       
-      // Call the AI assistant function for better content generation
-      const response = await fetch('/api/ai-assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentType: 'flashcards',
-          topic: finalTopic || finalContent.substring(0, 100),
+      // Generate sample flashcards for now (simulating AI generation)
+      const cards = [];
+      const numCards = parseInt(count);
+      const cardTopic = topic || finalContent.substring(0, 30) + '...';
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      for (let i = 0; i < numCards; i++) {
+        cards.push({
+          id: `generated-${Date.now()}-${i}`,
+          title: `${cardTopic} - Concept ${i + 1}`,
+          question: `What is the key concept about "${cardTopic}" that relates to topic ${i + 1}?`,
+          answer: `This is a detailed answer for concept ${i + 1} about ${cardTopic}. The answer explains the fundamental principles and provides practical examples for better understanding.`,
+          tags: [topic.toLowerCase() || 'study', difficulty],
           difficulty,
-          count: parseInt(count),
-          message: finalContent || finalTopic
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate flashcards');
+          selected: true
+        });
       }
-
-      const data = await response.json();
-      let aiResponse = data.response;
-
-      // Try to parse JSON response
-      let parsedCards = [];
-      try {
-        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          parsedCards = parsed.flashcards || [];
-        }
-      } catch (parseError) {
-        console.error('Failed to parse AI response, using fallback generation');
-        // Fallback to generating sample cards based on topic
-        parsedCards = generateFallbackCards(finalTopic || finalContent, parseInt(count));
-      }
-
-      const cards = parsedCards.map((card: any, index: number) => ({
-        id: `generated-${Date.now()}-${index}`,
-        title: card.title || `${finalTopic || 'Study'} - Card ${index + 1}`,
-        question: card.question || `Question about ${finalTopic || 'the topic'}`,
-        answer: card.answer || `Answer for ${finalTopic || 'the topic'}`,
-        hint: card.hint || undefined,
-        tags: [finalTopic.toLowerCase() || 'study', difficulty],
-        difficulty,
-        selected: true
-      }));
 
       console.log('AIFlashcardGenerator: Generated cards:', cards);
       setGeneratedCards(cards);
 
       toast({
         title: "Flashcards Generated Successfully!",
-        description: `Generated ${cards.length} flashcards about "${finalTopic || 'your content'}". Review and select which ones to save.`,
+        description: `Generated ${cards.length} flashcards. Review and select which ones to create.`,
       });
     } catch (error) {
       console.error('AIFlashcardGenerator: Error generating flashcards:', error);
-      
-      // Generate fallback cards on error
-      const fallbackCards = generateFallbackCards(finalTopic || finalContent, parseInt(count));
-      const cards = fallbackCards.map((card: any, index: number) => ({
-        id: `fallback-${Date.now()}-${index}`,
-        title: card.title,
-        question: card.question,
-        answer: card.answer,
-        tags: [finalTopic.toLowerCase() || 'study', difficulty],
-        difficulty,
-        selected: true
-      }));
-      
-      setGeneratedCards(cards);
-      
       toast({
-        title: "Using Offline Generation",
-        description: `Generated ${cards.length} sample flashcards. AI service unavailable.`,
+        title: "Generation Failed",
+        description: "Failed to generate flashcards. Please try again with different content.",
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const generateFallbackCards = (topicText: string, cardCount: number) => {
-    const topic = topicText.substring(0, 50);
-    const cards = [];
-    
-    for (let i = 0; i < cardCount; i++) {
-      cards.push({
-        title: `${topic} - Concept ${i + 1}`,
-        question: `What is an important concept related to ${topic}?`,
-        answer: `This is a key concept about ${topic} that covers fundamental principles and practical applications for better understanding.`,
-      });
-    }
-    
-    return cards;
   };
 
   const toggleCardSelection = (cardId: string) => {
@@ -152,12 +97,13 @@ export const AIFlashcardGenerator = () => {
     if (selectedCards.length === 0) {
       toast({
         title: "No Cards Selected",
-        description: "Please select at least one flashcard to save.",
+        description: "Please select at least one flashcard to create.",
         variant: "destructive",
       });
       return;
     }
 
+    // Check authentication before proceeding
     if (!user?.user_id) {
       toast({
         title: "Authentication Required",
@@ -169,6 +115,7 @@ export const AIFlashcardGenerator = () => {
 
     setIsCreating(true);
     let createdCount = 0;
+    let errorCount = 0;
 
     try {
       console.log('AIFlashcardGenerator: Creating selected cards for user:', user.user_id);
@@ -177,8 +124,8 @@ export const AIFlashcardGenerator = () => {
         try {
           console.log('Creating flashcard:', card.title);
           
-          // Create flashcard - this will appear in FlashcardVault
-          createFlashcard({
+          // Save as both flashcard and study material
+          await createFlashcard({
             title: card.title,
             question: card.question,
             answer: card.answer,
@@ -186,16 +133,11 @@ export const AIFlashcardGenerator = () => {
             tags: Array.isArray(card.tags) ? card.tags : [card.tags].filter(Boolean)
           });
           
-          // Also create study material for comprehensive tracking
-          createStudyMaterial({
+          await createMaterial({
             title: card.title,
-            content: { 
-              question: card.question, 
-              answer: card.answer,
-              hint: card.hint
-            },
+            content: { question: card.question, answer: card.answer },
             type: 'flashcards',
-            topic: topic || card.title.split(' - ')[0] || 'General',
+            topic: topic || card.title,
             difficulty: card.difficulty,
             tags: Array.isArray(card.tags) ? card.tags : [card.tags].filter(Boolean),
             source: 'AI Generator'
@@ -205,13 +147,14 @@ export const AIFlashcardGenerator = () => {
           console.log('Successfully created flashcard:', card.title);
         } catch (error) {
           console.error('AIFlashcardGenerator: Error creating card:', card.title, error);
+          errorCount++;
         }
       }
 
       if (createdCount > 0) {
         toast({
-          title: "Cards Saved Successfully!",
-          description: `Successfully saved ${createdCount} flashcards. Go to the Flashcards tab to study them.`,
+          title: "Cards Created Successfully!",
+          description: `Successfully created ${createdCount} flashcards. Check your Flashcard Vault to review them.`,
         });
         
         // Reset form
@@ -223,8 +166,8 @@ export const AIFlashcardGenerator = () => {
     } catch (error) {
       console.error('AIFlashcardGenerator: Error in creation process:', error);
       toast({
-        title: "Save Failed",
-        description: "Failed to save some flashcards. Please try again.",
+        title: "Creation Failed",
+        description: "Failed to create some flashcards. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -237,91 +180,70 @@ export const AIFlashcardGenerator = () => {
     setUploadedContent(fileContent);
     if (fileContent) {
       toast({
-        title: "File Processed",
-        description: `Content from ${fileName} is ready for flashcard generation.`,
+        title: "File Processed Successfully",
+        description: `Content from ${fileName} has been loaded and is ready for flashcard generation.`,
       });
     }
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      <Card className="p-8 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-purple-600 rounded-lg">
-            <Wand2 className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">AI Flashcard Generator</h2>
-            <p className="text-gray-600">Transform your study material into interactive flashcards</p>
-          </div>
+    <div className="space-y-6 pb-20">
+      <Card className="p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Wand2 className="w-5 h-5 text-purple-600" />
+          <h2 className="text-lg font-semibold text-gray-900">AI Flashcard Generator</h2>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* File Upload Component */}
           <FileUploadComponent onFileContent={handleFileContent} />
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-purple-50 text-gray-500">OR</span>
-            </div>
-          </div>
+          <div className="text-center text-sm text-gray-500">OR</div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Study Content
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Study Content (paste text, notes, etc.)
             </label>
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste your notes, textbook excerpts, or any study material here..."
+              placeholder="Paste your study material here..."
               rows={4}
-              className="resize-none"
             />
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-purple-50 text-gray-500">OR</span>
-            </div>
-          </div>
+          <div className="text-center text-sm text-gray-500">OR</div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Specific Topic
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Topic/Subject
             </label>
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Photosynthesis, Linear Algebra, World War II..."
-              className="text-base"
+              placeholder="e.g., Photosynthesis, World War II, Calculus..."
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">
-                Difficulty Level
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Difficulty
               </label>
               <Select value={difficulty} onValueChange={(value: 'easy' | 'medium' | 'hard') => setDifficulty(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="easy">Easy - Basic concepts</SelectItem>
-                  <SelectItem value="medium">Medium - Standard level</SelectItem>
-                  <SelectItem value="hard">Hard - Advanced concepts</SelectItem>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Number of Cards
               </label>
               <Select value={count} onValueChange={setCount}>
@@ -341,17 +263,17 @@ export const AIFlashcardGenerator = () => {
           <Button 
             onClick={generateFlashcards}
             disabled={isGenerating || (!content.trim() && !topic.trim() && !uploadedContent.trim())}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 text-base font-medium"
+            className="w-full bg-purple-600 hover:bg-purple-700"
           >
             {isGenerating ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Generating Flashcards...
               </>
             ) : (
               <>
-                <Wand2 className="w-5 h-5 mr-2" />
-                Generate Flashcards with AI
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Flashcards
               </>
             )}
           </Button>
@@ -360,74 +282,53 @@ export const AIFlashcardGenerator = () => {
 
       {/* Generated Flashcards Preview */}
       {generatedCards.length > 0 && (
-        <Card className="p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Generated Flashcards</h3>
-              <p className="text-gray-600">Review and select flashcards to save to your collection</p>
-            </div>
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Generated Flashcards</h3>
             <Button 
               onClick={createSelectedCards}
               disabled={isCreating || !generatedCards.some(card => card.selected)}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+              className="bg-green-600 hover:bg-green-700"
             >
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
+                  Creating Cards...
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 mr-2" />
-                  Save Selected ({generatedCards.filter(card => card.selected).length})
+                  Create Selected ({generatedCards.filter(card => card.selected).length})
                 </>
               )}
             </Button>
           </div>
 
-          <div className="grid gap-4">
+          <div className="space-y-4">
             {generatedCards.map((card) => (
               <Card 
                 key={card.id} 
-                className={`p-6 cursor-pointer transition-all duration-200 ${
-                  card.selected 
-                    ? 'ring-2 ring-purple-500 bg-purple-50 border-purple-200' 
-                    : 'hover:shadow-md border-gray-200'
+                className={`p-4 cursor-pointer transition-all ${
+                  card.selected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'
                 }`}
                 onClick={() => toggleCardSelection(card.id)}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <h4 className="font-semibold text-gray-900">{card.title}</h4>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${
-                          card.difficulty === 'easy' ? 'border-green-300 text-green-700' :
-                          card.difficulty === 'medium' ? 'border-yellow-300 text-yellow-700' :
-                          'border-red-300 text-red-700'
-                        }`}
-                      >
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h4 className="font-medium text-gray-900">{card.title}</h4>
+                      <Badge variant="outline" className="text-xs">
                         {card.difficulty}
                       </Badge>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium text-blue-600">Q:</span> {card.question}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium text-green-600">A:</span> {card.answer}
-                      </p>
-                      {card.hint && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium text-yellow-600">Hint:</span> {card.hint}
-                        </p>
-                      )}
-                    </div>
-                    
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Q:</strong> {card.question}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>A:</strong> {card.answer}
+                    </p>
                     {card.tags && card.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1">
                         {card.tags.map((tag: string, tagIndex: number) => (
                           <Badge key={tagIndex} variant="secondary" className="text-xs">
                             #{tag}
@@ -436,19 +337,14 @@ export const AIFlashcardGenerator = () => {
                       </div>
                     )}
                   </div>
-                  
-                  <div className="ml-6 flex-shrink-0">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      card.selected 
-                        ? 'bg-purple-600 border-purple-600' 
-                        : 'border-gray-300 hover:border-purple-400'
-                    }`}>
-                      {card.selected && (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
+                  <div className="ml-4">
+                    {card.selected ? (
+                      <div className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                    )}
                   </div>
                 </div>
               </Card>

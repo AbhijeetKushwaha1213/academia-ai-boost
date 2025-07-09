@@ -2,7 +2,24 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-import { UserProfile } from '@/types/user';
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  userType: 'exam' | 'college';
+  examType?: string;
+  college?: string;
+  branch?: string;
+  semester?: number;
+  examDate?: string;
+  study_streak: number;
+  total_study_hours: number;
+  current_level: number;
+  experience_points: number;
+  avatar?: string;
+}
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -13,7 +30,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateUserType: (type: 'exam' | 'college', details: any) => Promise<void>;
   updateUser: (updatedUser: UserProfile) => void;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<any>;
   refetch: () => Promise<void>;
 }
 
@@ -38,82 +54,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
-        // Map database fields to UserProfile interface
-        const userProfile: UserProfile = {
+        // Ensure user_type is properly typed
+        const userType = data.user_type === 'college' ? 'college' : 'exam';
+        
+        setUser({
           id: data.id,
           user_id: data.user_id,
           name: data.name,
           email: data.email,
-          user_type: data.user_type === 'college' ? 'college' : 'exam',
-          exam_type: data.exam_type || undefined,
+          userType: userType,
+          examType: data.exam_type || undefined,
           college: data.college || undefined,
           branch: data.branch || undefined,
           semester: data.semester || undefined,
-          exam_date: data.exam_date || undefined,
+          examDate: data.exam_date || undefined,
           study_streak: data.study_streak || 0,
           total_study_hours: data.total_study_hours || 0,
           current_level: data.current_level || 1,
           experience_points: data.experience_points || 0,
-          avatar: data.avatar || undefined,
-          created_at: data.created_at,
-          updated_at: data.updated_at
-        };
-        
-        setUser(userProfile);
+          avatar: data.avatar || undefined
+        });
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
-    }
-  };
-
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) {
-      throw new Error('No authenticated user');
-    }
-
-    try {
-      console.log('Updating profile with:', updates);
-      
-      // Get current auth user for user_id
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('No authenticated user');
-
-      // Prepare data for database with proper typing
-      const updateData = {
-        user_id: authUser.id,
-        email: authUser.email!,
-        name: updates.name || user.name || authUser.email!.split('@')[0],
-        user_type: updates.user_type || user.user_type || 'exam',
-        avatar: updates.avatar || user.avatar,
-        branch: updates.branch || user.branch,
-        college: updates.college || user.college,
-        semester: updates.semester || user.semester,
-        exam_date: updates.exam_date || user.exam_date,
-        exam_type: updates.exam_type || user.exam_type,
-        study_streak: updates.study_streak || user.study_streak || 0,
-        total_study_hours: updates.total_study_hours || user.total_study_hours || 0,
-        current_level: updates.current_level || user.current_level || 1,
-        experience_points: updates.experience_points || user.experience_points || 0,
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert(updateData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating profile:', error);
-        throw error;
-      }
-
-      console.log('Profile updated successfully:', data);
-      await fetchUserProfile(authUser); // Refetch to get updated data
-      return data;
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
     }
   };
 
@@ -286,12 +249,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         ...user,
         name: details.name || user.name,
-        user_type: type,
-        exam_type: details.examType,
+        userType: type,
+        examType: details.examType,
         college: details.college,
         branch: details.course,
         semester: details.semester,
-        exam_date: details.examDate,
+        examDate: details.examDate,
       });
 
       toast({
@@ -314,7 +277,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       updateUserType,
       updateUser,
-      updateProfile,
       refetch
     }}>
       {children}

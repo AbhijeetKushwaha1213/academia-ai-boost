@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CollegeDashboard } from '../dashboard/CollegeDashboard';
 import { ExamDashboard } from '../dashboard/ExamDashboard';
@@ -11,6 +10,7 @@ import { NewAchievementsPage } from '../achievements/NewAchievementsPage';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { DiscoverResources } from '../discover/DiscoverResources';
 import { useAuth } from '../auth/AuthProvider';
+
 import { ResourceSpace } from '../resources/ResourceSpace';
 
 interface ContentRendererProps {
@@ -32,7 +32,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
     
     switch (activeTab) {
       case 'home':
-        return user?.user_type === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
+        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
       case 'flashcards':
         return <FlashcardVault />;
       case 'ai':
@@ -53,7 +53,7 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
         return <DiscoverResources onNavigate={handleNavigate} />;
       default:
         console.log('ContentRenderer: Unknown tab, rendering default dashboard');
-        return user?.user_type === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
+        return user?.userType === 'college' ? <CollegeDashboard /> : <ExamDashboard />;
     }
   };
 

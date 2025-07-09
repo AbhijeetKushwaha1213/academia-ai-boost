@@ -61,7 +61,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
           <div>
             <h1 className="font-bold text-gray-900 text-sm">StudyMate AI</h1>
             <p className="text-xs text-gray-500">
-              {user.user_type === 'exam' ? 'Exam Prep' : 'College'}
+              {user.userType === 'exam' ? 'Exam Prep' : 'College'}
             </p>
           </div>
         </div>
