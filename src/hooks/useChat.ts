@@ -11,6 +11,7 @@ export const useChat = () => {
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Load chat sessions
   const loadSessions = async () => {
@@ -44,7 +45,10 @@ export const useChat = () => {
 
       if (error) throw error;
       
-      const sessionMessages = data?.messages as ChatMessage[] || [];
+      // Safely cast messages from JSON
+      const sessionMessages = Array.isArray(data?.messages) 
+        ? (data.messages as unknown as ChatMessage[]) 
+        : [];
       setMessages(sessionMessages);
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -54,17 +58,29 @@ export const useChat = () => {
     }
   };
 
+  // Load a specific session
+  const loadSession = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      setCurrentSession(session);
+      await loadMessages(sessionId);
+    }
+  };
+
   // Create new session
-  const createSession = async (title: string, topic: string) => {
+  const createSession = async (title?: string, topic?: string) => {
     if (!user?.user_id) return null;
+
+    const sessionTitle = title || 'New Chat';
+    const sessionTopic = topic || 'general';
 
     try {
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert({
           user_id: user.user_id,
-          title,
-          topic,
+          title: sessionTitle,
+          topic: sessionTopic,
           messages: []
         })
         .select()
@@ -85,15 +101,17 @@ export const useChat = () => {
     }
   };
 
-  // Send message
-  const sendMessage = async (content: string) => {
+  // Save a message
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
     if (!currentSession || !user?.user_id) return;
+
+    setSaveStatus('saving');
 
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       user_id: user.user_id,
       session_id: currentSession.id,
-      role: 'user',
+      role,
       content,
       timestamp: new Date().toISOString()
     };
@@ -102,45 +120,61 @@ export const useChat = () => {
     setMessages(updatedMessages);
 
     try {
-      // Update session with new messages
+      // Update session with new messages - cast to unknown first to avoid type issues
       const { error } = await supabase
         .from('chat_sessions')
         .update({
-          messages: updatedMessages,
+          messages: updatedMessages as unknown as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentSession.id);
 
       if (error) throw error;
-
-      // Here you would typically call your AI service to get a response
-      // For now, we'll simulate a response
-      setTimeout(() => {
-        const aiResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          user_id: user.user_id,
-          session_id: currentSession.id,
-          role: 'assistant',
-          content: generateMockResponse(content),
-          timestamp: new Date().toISOString()
-        };
-
-        const finalMessages = [...updatedMessages, aiResponse];
-        setMessages(finalMessages);
-
-        // Update session with AI response
-        supabase
-          .from('chat_sessions')
-          .update({
-            messages: finalMessages,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentSession.id);
-      }, 1000);
-
+      setSaveStatus('saved');
+      
+      // Reset save status after a delay
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
-      console.error('Error sending message:', err);
-      setError('Failed to send message');
+      console.error('Error saving message:', err);
+      setError('Failed to save message');
+      setSaveStatus('error');
+    }
+  };
+
+  // Send message (combines user message and AI response)
+  const sendMessage = async (content: string) => {
+    if (!currentSession || !user?.user_id) return;
+
+    // Save user message
+    await saveMessage('user', content);
+
+    // Simulate AI response
+    setTimeout(async () => {
+      const aiResponse = generateMockResponse(content);
+      await saveMessage('assistant', aiResponse);
+    }, 1000);
+  };
+
+  // Update session title
+  const updateSessionTitle = async (sessionId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ title: newTitle })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, title: newTitle } : s
+      ));
+      
+      if (currentSession?.id === sessionId) {
+        setCurrentSession(prev => prev ? { ...prev, title: newTitle } : null);
+      }
+    } catch (err) {
+      console.error('Error updating session title:', err);
+      setError('Failed to update session title');
     }
   };
 
@@ -178,10 +212,14 @@ export const useChat = () => {
     currentSession,
     loading,
     error,
+    saveStatus,
     setCurrentSession,
     loadMessages,
+    loadSession,
     createSession,
     sendMessage,
+    saveMessage,
+    updateSessionTitle,
     deleteSession,
     clearError: () => setError(null)
   };

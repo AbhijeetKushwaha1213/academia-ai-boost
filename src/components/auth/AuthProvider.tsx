@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -14,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateUserType: (type: 'exam' | 'college', details: any) => Promise<void>;
   updateUser: (updatedUser: UserProfile) => void;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<any>;
   refetch: () => Promise<void>;
 }
 
@@ -63,6 +63,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+    }
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) {
+      throw new Error('No authenticated user');
+    }
+
+    try {
+      console.log('Updating profile with:', updates);
+      
+      // Get current auth user for user_id
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('No authenticated user');
+
+      // Prepare data for database
+      const updateData = {
+        user_id: authUser.id,
+        email: authUser.email!,
+        name: updates.name || user.name || authUser.email!.split('@')[0],
+        user_type: updates.user_type || user.user_type || 'exam',
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remove undefined values and id field
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([key, value]) => key !== 'id' && value !== undefined)
+      );
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(cleanedData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
+
+      console.log('Profile updated successfully:', data);
+      await fetchUserProfile(authUser); // Refetch to get updated data
+      return data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
     }
   };
 
@@ -263,6 +310,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       updateUserType,
       updateUser,
+      updateProfile,
       refetch
     }}>
       {children}

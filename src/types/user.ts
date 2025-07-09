@@ -35,13 +35,15 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }
 
 export interface ChatSession {
   id: string;
   user_id: string;
   title: string;
+  topic: string;
   created_at: string;
   updated_at: string;
+  messages?: ChatMessage[];
 }

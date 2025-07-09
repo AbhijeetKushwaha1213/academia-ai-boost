@@ -92,15 +92,24 @@ export const useAuth = () => {
     try {
       console.log('Updating profile with:', updates);
       
+      // Prepare data for database - ensure user_type is string and required fields are present
+      const updateData = {
+        user_id: user.id,
+        email: user.email!,
+        name: updates.name || profile?.name || user.email!.split('@')[0],
+        user_type: updates.user_type || profile?.user_type || 'exam',
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remove undefined values and id field
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([key, value]) => key !== 'id' && value !== undefined)
+      );
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          email: user.email!,
-          name: updates.name || profile?.name || user.email!.split('@')[0],
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .upsert(cleanedData)
         .select()
         .single();
 
