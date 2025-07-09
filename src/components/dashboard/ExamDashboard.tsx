@@ -9,12 +9,19 @@ import { useAuth } from '../auth/AuthProvider';
 import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap, Plus, Lightbulb, ClipboardList, BarChart3, Trash2, RotateCcw } from 'lucide-react';
 import { StudySessionPage } from '../session/StudySessionPage';
 import { StudyPlanPage } from '../planner/StudyPlanPage';
-import { FeatureStatusCard } from '../common/FeatureStatusCard';
+import { MockTestScheduler } from '../exam/MockTestScheduler';
+import { TestResultsViewer } from '../exam/TestResultsViewer';
+import { RevisionLogManager } from '../exam/RevisionLogManager';
+import { TrackerDeleteManager } from '../exam/TrackerDeleteManager';
 
 export const ExamDashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<'dashboard' | 'session' | 'plan'>('dashboard');
+  const [mockTestOpen, setMockTestOpen] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const [revisionOpen, setRevisionOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const todaysPlan = [
     { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
@@ -41,31 +48,19 @@ export const ExamDashboard = () => {
   };
 
   const handleScheduleMockTest = () => {
-    toast({
-      title: "Schedule Mock Test",
-      description: "Mock test scheduler - Coming Soon!",
-    });
+    setMockTestOpen(true);
   };
 
   const handleViewResults = () => {
-    toast({
-      title: "View Test Results",
-      description: "Test results dashboard - Coming Soon!",
-    });
+    setResultsOpen(true);
   };
 
   const handleDeleteTracker = () => {
-    toast({
-      title: "Delete Tracker",
-      description: "Topic tracker management - Coming Soon!",
-    });
+    setDeleteOpen(true);
   };
 
   const handleRevisionLog = () => {
-    toast({
-      title: "Revision Log",
-      description: "Daily revision tracker - Coming Soon!",
-    });
+    setRevisionOpen(true);
   };
 
   const handleBackToDashboard = () => {
@@ -121,8 +116,8 @@ export const ExamDashboard = () => {
       <Card className="p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Good morning, {user?.full_name || 'Student'}! 🎯</h2>
-            <p className="text-indigo-100">Day 47 of your {user?.target_exam || 'JEE'} preparation journey</p>
+            <h2 className="text-2xl font-bold mb-2">Good morning, {user?.name || 'Student'}! 🎯</h2>
+            <p className="text-indigo-100">Day 47 of your {user?.examType || 'JEE'} preparation journey</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold">87%</div>
@@ -310,6 +305,12 @@ export const ExamDashboard = () => {
           </div>
         </div>
       </Card>
+
+      {/* Modals */}
+      <MockTestScheduler open={mockTestOpen} onOpenChange={setMockTestOpen} />
+      <TestResultsViewer open={resultsOpen} onOpenChange={setResultsOpen} />
+      <RevisionLogManager open={revisionOpen} onOpenChange={setRevisionOpen} />
+      <TrackerDeleteManager open={deleteOpen} onOpenChange={setDeleteOpen} />
     </div>
   );
 };
