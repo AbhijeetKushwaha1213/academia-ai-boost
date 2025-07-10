@@ -1,73 +1,47 @@
-# Welcome to your Lovable project
+# 📚 StudyMate AI — Intelligent Study Assistant
 
-## Project info
+> An AI-powered personal learning dashboard for students to streamline college projects, exam preparation, and skill development — all in one place.
 
-**URL**: https://lovable.dev/projects/3f2c0897-20ea-4c40-860f-540e913fcc74
+---
 
-## How can I edit this code?
+## 🚀 Overview
 
-There are several ways of editing your application.
+StudyMate AI is a full-stack web application designed to help students focus, organize, and accelerate their learning. Whether you're managing assignments, preparing for exams, or practicing coding, StudyMate integrates everything you need into a single distraction-free platform.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3f2c0897-20ea-4c40-860f-540e913fcc74) and start prompting.
+## ✨ Key Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🧠 **AI Content Generator**  
+  Generate flashcards, quizzes, mind maps, flowcharts, and summaries from notes or PDFs using integrated OpenAI models.
 
-**Use your preferred IDE**
+- 📊 **Dual Dashboards**  
+  Switch between **College Mode** (project & skill tracking) and **Preparation Mode** (mock tests, revision logs, performance tracking).
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 🔗 **External Platform Integration**  
+  Seamlessly connect GitHub, LeetCode, and LinkedIn to sync progress and receive AI-powered study recommendations.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 💬 **AI Chat Assistant**  
+  Built-in conversational assistant for concept clarity, planning, and content generation.
 
-Follow these steps:
+- 📁 **Personalized Study Resources**  
+  Upload notes, PDFs, and use them across AI tools for smart content generation.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- ⏱️ **Focus Mode & Timer**  
+  Pomodoro-style sessions with tools like code editor, terminal, practice problem launcher.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🛠️ Tech Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- **Frontend**: React.js + TypeScript  
+- **Backend**: Supabase (Auth, DB, Storage)  
+- **AI Integration**: OpenAI GPT-4 APIs  
+- **Authentication**: Supabase Auth  
+- **Hosting**: Vercel / Render / Custom server  
+- **Editor Tools**: Monaco Editor (VS Code-like), CodeMirror  
+- **Design System**: Tailwind CSS + Radix UI
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/3f2c0897-20ea-4c40-860f-540e913fcc74) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
