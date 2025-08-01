@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validateAIInput, sanitizeHtml, checkRateLimit, createSafeError } from '@/lib/security';
 
 export interface ChatMessage {
   id: string;
@@ -20,46 +21,66 @@ export const useAIAssistant = () => {
   const sendMessage = async (message: string, subject?: string) => {
     if (!message.trim()) return;
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: message,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
-
     try {
+      // Validate and sanitize input
+      const validatedMessage = validateAIInput(message);
+      const sanitizedMessage = sanitizeHtml(validatedMessage);
+      
+      // Rate limiting - max 20 messages per minute per user
+      const userId = user?.user_id || 'anonymous';
+      if (!checkRateLimit(`ai_chat_${userId}`, 20, 60000)) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "Please wait before sending another message.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: sanitizedMessage,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setIsLoading(true);
+
       const context = messages.slice(-10).map(msg => ({
         role: msg.role,
-        content: msg.content
+        content: sanitizeHtml(msg.content)
       }));
 
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
-          message,
+          message: sanitizedMessage,
           context,
           userType: user?.userType || 'exam',
-          subject
+          subject: subject ? sanitizeHtml(subject) : undefined
         }
       });
 
       if (error) throw error;
 
+      // Sanitize AI response before displaying
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response,
+        content: sanitizeHtml(data.response || 'No response received'),
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message to AI:', error);
+      const safeError = createSafeError(
+        error instanceof Error ? error.message : 'Unknown error',
+        'AI_CHAT_ERROR'
+      );
+      
       toast({
         title: "Error",
-        description: "Failed to get AI response. Please try again.",
+        description: safeError.message,
         variant: "destructive",
       });
     } finally {
@@ -71,51 +92,93 @@ export const useAIAssistant = () => {
     setIsLoading(true);
     
     try {
+      // Validate inputs
+      const validatedTopic = validateAIInput(topic);
+      const sanitizedTopic = sanitizeHtml(validatedTopic);
+      
+      // Rate limiting - max 10 content generations per hour per user
+      const userId = user?.user_id || 'anonymous';
+      if (!checkRateLimit(`ai_generate_${userId}`, 10, 3600000)) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "Please wait before generating more content.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      // Validate count and difficulty
+      const validCount = Math.max(1, Math.min(count, 20)); // Limit to max 20 items
+      const validDifficulty = ['easy', 'medium', 'hard'].includes(difficulty) ? difficulty : 'medium';
+      const validContentType = ['flashcards', 'mindmaps', 'quizzes', 'summaries'].includes(contentType) ? contentType : 'flashcards';
+
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
-          message: topic,
-          contentType,
-          topic,
-          difficulty,
-          count,
-          subject,
+          message: sanitizedTopic,
+          contentType: validContentType,
+          topic: sanitizedTopic,
+          difficulty: validDifficulty,
+          count: validCount,
+          subject: subject ? sanitizeHtml(subject) : undefined,
           userType: user?.userType || 'exam'
         }
       });
 
       if (error) throw error;
 
-      // Parse the AI response to extract JSON content
+      // Parse and sanitize the AI response
       let parsedContent;
       try {
-        // Try to extract JSON from the response
         const jsonMatch = data.response.match(/```json\n?(.*?)\n?```/s) || 
                          data.response.match(/\{[\s\S]*\}/);
         
         if (jsonMatch) {
           parsedContent = JSON.parse(jsonMatch[1] || jsonMatch[0]);
         } else {
-          // If no JSON found, try parsing the entire response
           parsedContent = JSON.parse(data.response);
         }
+        
+        // Sanitize all text content in the parsed response
+        parsedContent = sanitizeContentRecursively(parsedContent);
+        
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', parseError);
         // Fallback: create structured content from text response
-        parsedContent = createFallbackContent(contentType, data.response, topic, difficulty, count);
+        parsedContent = createFallbackContent(validContentType, sanitizeHtml(data.response), sanitizedTopic, validDifficulty, validCount);
       }
 
       return parsedContent;
     } catch (error) {
-      console.error('Error generating content:', error);
+      const safeError = createSafeError(
+        error instanceof Error ? error.message : 'Content generation failed',
+        'AI_GENERATE_ERROR'
+      );
+      
       toast({
         title: "Generation Failed",
-        description: "Failed to generate content. Please try again.",
+        description: safeError.message,
         variant: "destructive",
       });
       throw error;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const sanitizeContentRecursively = (obj: any): any => {
+    if (typeof obj === 'string') {
+      return sanitizeHtml(obj);
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(sanitizeContentRecursively);
+    }
+    if (obj && typeof obj === 'object') {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        sanitized[key] = sanitizeContentRecursively(value);
+      }
+      return sanitized;
+    }
+    return obj;
   };
 
   const createFallbackContent = (contentType: string, response: string, topic: string, difficulty: string, count: number) => {

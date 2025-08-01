@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, X } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
+import { validateFlashcardContent, sanitizeHtml } from '@/lib/security';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateFlashcardDialogProps {
   children: React.ReactNode;
@@ -25,6 +27,7 @@ export const CreateFlashcardDialog = ({ children, open, onOpenChange }: CreateFl
   const [newTag, setNewTag] = useState('');
 
   const { createFlashcard, isCreating } = useFlashcards();
+  const { toast } = useToast();
 
   const handleOpenChange = (newOpen: boolean) => {
     setIsOpen(newOpen);
@@ -34,9 +37,19 @@ export const CreateFlashcardDialog = ({ children, open, onOpenChange }: CreateFl
   };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
+    const sanitizedTag = sanitizeHtml(newTag.trim());
+    if (sanitizedTag && !tags.includes(sanitizedTag) && tags.length < 10) {
+      // Limit tag length and total number of tags
+      if (sanitizedTag.length <= 20) {
+        setTags([...tags, sanitizedTag]);
+        setNewTag('');
+      } else {
+        toast({
+          title: "Tag too long",
+          description: "Tags must be 20 characters or less.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -47,26 +60,47 @@ export const CreateFlashcardDialog = ({ children, open, onOpenChange }: CreateFl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !question.trim() || !answer.trim()) {
-      return;
+    try {
+      // Validate and sanitize all inputs
+      const flashcardData = validateFlashcardContent({
+        question: sanitizeHtml(question.trim()),
+        answer: sanitizeHtml(answer.trim()),
+        tags: tags.map(tag => sanitizeHtml(tag)),
+        difficulty
+      });
+
+      if (!title.trim()) {
+        toast({
+          title: "Title required",
+          description: "Please enter a title for your flashcard.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      createFlashcard({
+        title: sanitizeHtml(title.trim()),
+        question: flashcardData.question,
+        answer: flashcardData.answer,
+        difficulty: flashcardData.difficulty,
+        tags: flashcardData.tags || [],
+      });
+
+      // Reset form
+      setTitle('');
+      setQuestion('');
+      setAnswer('');
+      setDifficulty('medium');
+      setTags([]);
+      setNewTag('');
+      handleOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Validation Error",
+        description: error instanceof Error ? error.message : "Please check your input.",
+        variant: "destructive",
+      });
     }
-
-    createFlashcard({
-      title: title.trim(),
-      question: question.trim(),
-      answer: answer.trim(),
-      difficulty,
-      tags,
-    });
-
-    // Reset form
-    setTitle('');
-    setQuestion('');
-    setAnswer('');
-    setDifficulty('medium');
-    setTags([]);
-    setNewTag('');
-    handleOpenChange(false);
   };
 
   return (

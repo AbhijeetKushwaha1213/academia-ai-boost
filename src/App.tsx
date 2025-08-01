@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { MainApp } from "./components/MainApp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { SecurityHeaders } from "./components/security/SecurityHeaders";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
@@ -29,15 +30,21 @@ const queryClient = new QueryClient({
   },
 });
 
-console.log('App: Initializing application');
+// Only log in development to prevent information disclosure
+if (process.env.NODE_ENV === 'development') {
+  console.log('App: Initializing application');
+}
 
 const App = () => {
-  console.log('App: Rendering main app component');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('App: Rendering main app component');
+  }
   
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <SecurityHeaders />
           <Toaster />
           <Sonner />
           <BrowserRouter>

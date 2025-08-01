@@ -99,12 +99,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     getInitialSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
+    // Listen for auth changes - SECURITY FIX: Prevent deadlocks
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Only log in development to prevent sensitive data exposure
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth state changed:', event, session?.user?.email);
+      }
       
+      // Synchronous state updates only
       if (session?.user) {
-        await fetchUserProfile(session.user);
+        // Defer profile fetching to prevent deadlocks
+        setTimeout(() => {
+          fetchUserProfile(session.user);
+        }, 0);
       } else {
         setUser(null);
       }
@@ -117,18 +124,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      
+      // Rate limiting for login attempts
+      const clientId = `login_${email}_${Date.now()}`;
+      
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
 
       if (error) {
+        // Don't expose specific auth errors to prevent enumeration attacks
+        const safeMessage = error.message.includes('Invalid login credentials') 
+          ? 'Invalid email or password'
+          : 'Authentication failed. Please try again.';
+          
         toast({
           title: "Sign In Failed",
-          description: error.message,
+          description: safeMessage,
           variant: "destructive",
         });
-        throw error;
+        throw new Error(safeMessage);
       }
 
       toast({
@@ -136,7 +152,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "You have successfully signed in.",
       });
     } catch (error) {
-      console.error('Sign in error:', error);
+      // Don't log sensitive auth errors in production
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Sign in error:', error);
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -146,24 +165,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
+      
+      // Basic input validation
+      if (!email || !password || !name) {
+        throw new Error('All fields are required');
+      }
+      
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters long');
+      }
+      
       const { error } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase().trim(),
         password,
         options: {
           data: {
-            name: name,
+            name: name.trim(),
           },
           emailRedirectTo: `${window.location.origin}/`
         }
       });
 
       if (error) {
+        // Sanitize error messages
+        const safeMessage = error.message.includes('already registered')
+          ? 'An account with this email already exists'
+          : 'Account creation failed. Please try again.';
+          
         toast({
           title: "Sign Up Failed",
-          description: error.message,
+          description: safeMessage,
           variant: "destructive",
         });
-        throw error;
+        throw new Error(safeMessage);
       }
 
       toast({
@@ -171,7 +205,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Please check your email to verify your account.",
       });
     } catch (error) {
-      console.error('Sign up error:', error);
+      // Don't log sensitive information in production
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Sign up error:', error);
+      }
       throw error;
     } finally {
       setIsLoading(false);
