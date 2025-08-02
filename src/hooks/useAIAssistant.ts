@@ -4,6 +4,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { validateAIInput, sanitizeHtml, checkRateLimit, createSafeError } from '@/lib/security';
+import { useSecurityMonitor } from '@/hooks/useSecurityMonitor';
 
 export interface ChatMessage {
   id: string;
@@ -15,6 +16,7 @@ export interface ChatMessage {
 export const useAIAssistant = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { monitorAIPrompt } = useSecurityMonitor();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +26,12 @@ export const useAIAssistant = () => {
     try {
       // Validate and sanitize input
       const validatedMessage = validateAIInput(message);
+      
+      // Security monitoring for suspicious prompts
+      if (!monitorAIPrompt(validatedMessage)) {
+        return; // Block suspicious prompts
+      }
+      
       const sanitizedMessage = sanitizeHtml(validatedMessage);
       
       // Rate limiting - max 20 messages per minute per user
@@ -94,6 +102,12 @@ export const useAIAssistant = () => {
     try {
       // Validate inputs
       const validatedTopic = validateAIInput(topic);
+      
+      // Security monitoring for suspicious prompts
+      if (!monitorAIPrompt(validatedTopic)) {
+        return null; // Block suspicious prompts
+      }
+      
       const sanitizedTopic = sanitizeHtml(validatedTopic);
       
       // Rate limiting - max 10 content generations per hour per user

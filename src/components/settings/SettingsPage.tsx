@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '../auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { IntegrationsSettings } from './IntegrationsSettings';
+import { PasswordChangeForm } from './PasswordChangeForm';
 import { supabase } from '@/integrations/supabase/client';
 
 export const SettingsPage = () => {
@@ -248,25 +249,7 @@ export const SettingsPage = () => {
         <TabsContent value="privacy">
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Privacy & Security</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="changePassword">Change Password</Label>
-                <Input
-                  type="password"
-                  id="changePassword"
-                  placeholder="New Password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  type="password"
-                  id="confirmPassword"
-                  placeholder="Confirm New Password"
-                />
-              </div>
-              <Button>Change Password</Button>
-            </div>
+            <PasswordChangeForm />
           </Card>
         </TabsContent>
 

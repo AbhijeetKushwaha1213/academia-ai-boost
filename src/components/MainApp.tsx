@@ -8,6 +8,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { SessionTimeoutWarning } from '@/components/security/SessionTimeoutWarning';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -151,6 +152,7 @@ export const MainApp = () => {
 
   return (
     <ErrorBoundary>
+      <SessionTimeoutWarning />
       <AppLayout 
         user={user}
         activeTab={activeTab}
