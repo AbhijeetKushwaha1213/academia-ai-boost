@@ -151,8 +151,14 @@ export const OnboardingFlow = () => {
     setIsLoading(true);
     try {
       const userType = data.learningMode;
+      
+      // Validate required fields
+      if (!userType || !data.name) {
+        throw new Error('Missing required information');
+      }
+
       const details: any = {
-        name: data.name,
+        name: data.name.trim(),
         age: data.age,
         avatarUrl: data.avatarUrl,
         subjects: data.subjects,
@@ -173,6 +179,8 @@ export const OnboardingFlow = () => {
         details.semester = parseInt(data.semester || '1');
       }
 
+      console.log('OnboardingFlow: Completing onboarding with details:', details);
+      
       await updateUserType(userType as 'exam' | 'college', details);
       
       toast({

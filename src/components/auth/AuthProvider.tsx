@@ -243,13 +243,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUserType = async (type: 'exam' | 'college', details: any) => {
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      throw new Error('No authenticated user found');
+    }
 
     try {
+      console.log('AuthProvider: Updating user type:', type, 'with details:', details);
+
       const updateData: any = {
         user_type: type,
-        name: details.name || user.name,
+        name: details.name,
+        updated_at: new Date().toISOString()
       };
+
+      // Set avatar if provided
+      if (details.avatarUrl) updateData.avatar = details.avatarUrl;
 
       if (type === 'exam') {
         if (details.examType) updateData.exam_type = details.examType;
@@ -261,19 +270,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (details.semester) updateData.semester = details.semester;
       }
 
-      // Store additional onboarding data as JSON
-      if (details.subjects) updateData.subjects = details.subjects;
-      if (details.studyPreference) updateData.study_preference = details.studyPreference;
-      if (details.motivation) updateData.motivation = details.motivation;
+      // Store additional onboarding data
+      if (details.subjects) updateData.subjects = JSON.stringify(details.subjects);
+      if (details.studyPreference) updateData.study_preference = JSON.stringify(details.studyPreference);
+      if (details.motivation) updateData.motivation = JSON.stringify(details.motivation);
       if (details.dailyHours) updateData.daily_hours = details.dailyHours;
-      if (details.reviewModes) updateData.review_modes = details.reviewModes;
+      if (details.reviewModes) updateData.review_modes = JSON.stringify(details.reviewModes);
 
       const { error } = await supabase
         .from('user_profiles')
         .update(updateData)
-        .eq('user_id', user.user_id);
+        .eq('user_id', session.user.id);
 
       if (error) {
+        console.error('AuthProvider: Database update error:', error);
         toast({
           title: "Update Failed",
           description: error.message,
@@ -282,20 +292,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      // Update local state
-      setUser({
-        ...user,
-        name: details.name || user.name,
-        userType: type,
-        examType: details.examType,
-        college: details.college,
-        branch: details.course,
-        semester: details.semester,
-        examDate: details.examDate,
-      });
+      console.log('AuthProvider: Profile updated successfully, fetching fresh data...');
+      
+      // Refetch the user profile to get updated data
+      await fetchUserProfile(session.user);
 
       toast({
-        title: "Profile Updated",
+        title: "Profile Setup Complete! ✅",
         description: "Your study preferences have been saved.",
       });
     } catch (error) {

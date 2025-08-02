@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Target, Flame, Star, ChevronRight, BookOpen } from 'lucide-react';
+import { FixStatusCard } from './common/FixStatusCard';
 
 export const Dashboard = () => {
   return (
@@ -140,6 +141,9 @@ export const Dashboard = () => {
                 </Button>
               </div>
             </Card>
+
+            {/* Fix Status Card */}
+            <FixStatusCard />
 
             {/* Achievement Card */}
             <Card className="p-6">

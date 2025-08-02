@@ -134,17 +134,27 @@ export const AIChat = ({
       return;
     }
 
-    const sessionData = {
-      title: currentTopic || `Chat ${format(new Date(), 'MMM dd, HH:mm')}`,
-      topic: currentTopic || 'General',
-      messages: messages.slice(1).map(msg => ({
-        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
-        content: msg.text,
-        timestamp: msg.timestamp.toISOString()
-      }))
-    };
+    try {
+      const sessionData = {
+        title: currentTopic || `Chat ${format(new Date(), 'MMM dd, HH:mm')}`,
+        topic: currentTopic || 'General',
+        messages: messages.slice(1).map(msg => ({
+          role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.text,
+          timestamp: msg.timestamp.toISOString()
+        }))
+      };
 
-    saveChatSession(sessionData);
+      console.log('AIChat: Saving chat session:', sessionData);
+      saveChatSession(sessionData);
+    } catch (error) {
+      console.error('AIChat: Error saving session:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save chat session. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSelectSession = (session: ChatSession) => {

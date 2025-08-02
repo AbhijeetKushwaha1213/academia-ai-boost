@@ -21,6 +21,8 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { AvatarUpload } from './AvatarUpload';
+import { FileUploadSection } from './FileUploadSection';
+import { FixStatusCard } from '../common/FixStatusCard';
 
 export const ProfilePage = () => {
   const { user, refetch } = useAuth();
@@ -111,6 +113,13 @@ export const ProfilePage = () => {
           if (refetch) {
             refetch();
           }
+        }}
+      />
+
+      {/* File Upload Section */}
+      <FileUploadSection 
+        onFileUpload={(fileUrl) => {
+          console.log('ProfilePage: File uploaded:', fileUrl);
         }}
       />
 
@@ -278,13 +287,8 @@ export const ProfilePage = () => {
         </div>
       </Card>
 
-      {/* Success Message for Fixed Functionality */}
-      <Card className="p-4 bg-green-50 border-green-200">
-        <div className="flex items-center space-x-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <span className="text-green-800 font-medium">Profile functionality is now working correctly!</span>
-        </div>
-      </Card>
+      {/* Fix Status Card */}
+      <FixStatusCard />
     </div>
   );
 };

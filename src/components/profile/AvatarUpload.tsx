@@ -22,13 +22,23 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user?.user_id) return;
+    if (!file || !user?.user_id) {
+      if (!user?.user_id) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to upload an avatar.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
       toast({
         title: "Invalid File Type",
-        description: "Please select an image file.",
+        description: "Please select a JPG, PNG, GIF, or WebP image file.",
         variant: "destructive",
       });
       return;
@@ -51,6 +61,8 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
     setUploading(true);
 
     try {
+      console.log('AvatarUpload: Starting upload for user:', user.user_id);
+      
       // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `avatar-${user.user_id}-${Date.now()}.${fileExt}`;
@@ -64,25 +76,34 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
         });
 
       if (error) {
-        console.error('Upload error:', error);
+        console.error('AvatarUpload: Storage upload error:', error);
         throw error;
       }
+
+      console.log('AvatarUpload: Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
 
+      console.log('AvatarUpload: Generated public URL:', publicUrl);
+
       // Update user profile with new avatar URL
       const { error: updateError } = await supabase
         .from('user_profiles')
-        .update({ avatar: publicUrl })
+        .update({ 
+          avatar: publicUrl,
+          updated_at: new Date().toISOString()
+        })
         .eq('user_id', user.user_id);
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
+        console.error('AvatarUpload: Profile update error:', updateError);
         throw updateError;
       }
+
+      console.log('AvatarUpload: Profile updated successfully');
 
       toast({
         title: "Avatar Updated! 🎉",
@@ -90,8 +111,11 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
       });
 
       onAvatarUpdate?.(publicUrl);
+      
+      // Reset file input
+      event.target.value = '';
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      console.error('AvatarUpload: Error uploading avatar:', error);
       toast({
         title: "Upload Failed",
         description: "Failed to update your avatar. Please try again.",
