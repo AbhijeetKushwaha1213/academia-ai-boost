@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      abhijeet: {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
-        }
-        Relationships: []
-      }
       achievements: {
         Row: {
           achievement_name: string
@@ -1066,30 +1051,6 @@ export type Database = {
           session_type?: string
           topics_covered?: string[] | null
           user_id?: string
-        }
-        Relationships: []
-      }
-      table_name: {
-        Row: {
-          data: Json | null
-          id: number
-          inserted_at: string
-          name: string | null
-          updated_at: string
-        }
-        Insert: {
-          data?: Json | null
-          id?: number
-          inserted_at?: string
-          name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          data?: Json | null
-          id?: number
-          inserted_at?: string
-          name?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
