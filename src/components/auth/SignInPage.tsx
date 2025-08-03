@@ -5,18 +5,54 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, BookOpen, Target } from 'lucide-react';
+import { Brain, BookOpen, Target, AlertCircle } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { useToast } from '@/hooks/use-toast';
 
 export const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const { signIn, signUp } = useAuth();
+  const { toast } = useToast();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateForm = (isSignUp = false) => {
+    const errors: {[key: string]: string} = {};
+
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (!password.trim()) {
+      errors.password = 'Password is required';
+    } else if (password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
+    }
+
+    if (isSignUp && !name.trim()) {
+      errors.name = 'Full name is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(false)) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       await signIn(email, password);
@@ -29,6 +65,11 @@ export const SignInPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(true)) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       await signUp(email, password, name);
@@ -68,8 +109,14 @@ export const SignInPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.email ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.email && (
+                    <div className="flex items-center mt-1 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.email}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
@@ -79,8 +126,14 @@ export const SignInPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.password ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.password && (
+                    <div className="flex items-center mt-1 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.password}
+                    </div>
+                  )}
                 </div>
                 <Button
                   type="submit"
@@ -102,8 +155,14 @@ export const SignInPage = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.name ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.name && (
+                    <div className="flex items-center mt-1 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.name}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="signup-email">Email</Label>
@@ -113,8 +172,14 @@ export const SignInPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.email ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.email && (
+                    <div className="flex items-center mt-1 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.email}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="signup-password">Password</Label>
@@ -124,8 +189,14 @@ export const SignInPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.password ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.password && (
+                    <div className="flex items-center mt-1 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.password}
+                    </div>
+                  )}
                 </div>
                 <Button
                   type="submit"
