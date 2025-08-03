@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { AvatarUpload } from './AvatarUpload';
 import { FileUploadSection } from './FileUploadSection';
-import { FixStatusCard } from '../common/FixStatusCard';
+
 
 export const ProfilePage = () => {
   const { user, refetch } = useAuth();
@@ -287,8 +287,6 @@ export const ProfilePage = () => {
         </div>
       </Card>
 
-      {/* Fix Status Card */}
-      <FixStatusCard />
     </div>
   );
 };

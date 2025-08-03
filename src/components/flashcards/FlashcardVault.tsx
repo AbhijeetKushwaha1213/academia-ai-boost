@@ -27,12 +27,6 @@ export const FlashcardVault = () => {
   const [viewingContent, setViewingContent] = useState<any>(null);
   const [viewerType, setViewerType] = useState<string>('');
 
-  console.log('FlashcardVault: Current data:', { 
-    flashcardsCount: flashcards.length, 
-    materialsCount: studyMaterials.length,
-    flashcardsData: flashcards.slice(0, 2),
-    materialsData: studyMaterials.slice(0, 2)
-  });
 
   const materialIcons = {
     flashcards: BookOpen,
@@ -337,17 +331,6 @@ export const FlashcardVault = () => {
         </div>
       </div>
 
-      {/* Debug Info */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <h4 className="font-medium text-blue-900 mb-2">Debug Info</h4>
-          <div className="text-sm text-blue-800">
-            <p>Flashcards: {flashcards.length}</p>
-            <p>Study Materials: {studyMaterials.length}</p>
-            <p>Filtered Content: {allFilteredContent.length}</p>
-          </div>
-        </Card>
-      )}
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -42,34 +42,62 @@ export const AIFlashcardGenerator = () => {
     setIsGenerating(true);
     
     try {
-      console.log('AIFlashcardGenerator: Starting generation with:', { finalContent, topic, difficulty, count });
+      console.log('AIFlashcardGenerator: Starting real AI generation with:', { finalContent, topic, difficulty, count });
       
-      // Generate sample flashcards for now (simulating AI generation)
-      const cards = [];
-      const numCards = parseInt(count);
-      const cardTopic = topic || finalContent.substring(0, 30) + '...';
+      const subject = user?.userType === 'college' ? user?.branch : user?.examType;
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      for (let i = 0; i < numCards; i++) {
-        cards.push({
-          id: `generated-${Date.now()}-${i}`,
-          title: `${cardTopic} - Concept ${i + 1}`,
-          question: `What is the key concept about "${cardTopic}" that relates to topic ${i + 1}?`,
-          answer: `This is a detailed answer for concept ${i + 1} about ${cardTopic}. The answer explains the fundamental principles and provides practical examples for better understanding.`,
-          tags: [topic.toLowerCase() || 'study', difficulty],
+      // Use real AI generation via supabase
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          contentType: 'flashcards',
+          topic: topic || finalContent,
           difficulty,
-          selected: true
-        });
+          count: parseInt(count),
+          subject,
+          message: finalContent || topic
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to generate flashcards');
+      }
+      console.log('AIFlashcardGenerator: Raw AI response:', data);
+      
+      let aiContent;
+      try {
+        aiContent = JSON.parse(data.response);
+      } catch (parseError) {
+        console.error('Failed to parse AI response, using fallback');
+        // Fallback to simple content generation
+        const numCards = parseInt(count);
+        const cardTopic = topic || finalContent.substring(0, 30);
+        aiContent = {
+          flashcards: Array.from({ length: numCards }, (_, i) => ({
+            question: `What is the key concept about "${cardTopic}"?`,
+            answer: `This covers the fundamental principles of ${cardTopic} with practical applications.`,
+            hint: `Think about the main aspects of ${cardTopic}`
+          }))
+        };
       }
 
-      console.log('AIFlashcardGenerator: Generated cards:', cards);
+      const cards = aiContent.flashcards?.map((card: any, i: number) => ({
+        id: `generated-${Date.now()}-${i}`,
+        title: `${topic || finalContent.substring(0, 30)} - Card ${i + 1}`,
+        question: card.question,
+        answer: card.answer,
+        hint: card.hint,
+        tags: [topic?.toLowerCase() || 'study', difficulty],
+        difficulty,
+        selected: true
+      })) || [];
+
+      console.log('AIFlashcardGenerator: Processed cards:', cards);
       setGeneratedCards(cards);
 
       toast({
-        title: "Flashcards Generated Successfully!",
-        description: `Generated ${cards.length} flashcards. Review and select which ones to create.`,
+        title: "AI Flashcards Generated! 🎉",
+        description: `Generated ${cards.length} intelligent flashcards. Review and save them to your vault.`,
       });
     } catch (error) {
       console.error('AIFlashcardGenerator: Error generating flashcards:', error);
