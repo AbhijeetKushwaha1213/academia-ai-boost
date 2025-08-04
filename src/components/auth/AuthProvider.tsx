@@ -254,11 +254,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const updateData: any = {
         user_type: type,
         name: details.name,
+        email: session.user.email,
         updated_at: new Date().toISOString()
       };
 
       // Set avatar if provided
       if (details.avatarUrl) updateData.avatar = details.avatarUrl;
+      
+      // Set age range if provided
+      if (details.age) updateData.age_range = details.age;
 
       if (type === 'exam') {
         if (details.examType) updateData.exam_type = details.examType;
@@ -266,16 +270,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (details.targetYear) updateData.target_year = details.targetYear;
       } else if (type === 'college') {
         if (details.college) updateData.college = details.college;
-        if (details.course) updateData.branch = details.course;
+        if (details.course) {
+          updateData.branch = details.course;
+          updateData.course = details.course;
+        }
         if (details.semester) updateData.semester = details.semester;
       }
 
-      // Store additional onboarding data
-      if (details.subjects) updateData.subjects = JSON.stringify(details.subjects);
-      if (details.studyPreference) updateData.study_preference = JSON.stringify(details.studyPreference);
-      if (details.motivation) updateData.motivation = JSON.stringify(details.motivation);
+      // Store additional onboarding data as JSONB
+      if (details.subjects && Array.isArray(details.subjects)) {
+        updateData.subjects = JSON.stringify(details.subjects);
+      }
+      if (details.studyPreference && Array.isArray(details.studyPreference)) {
+        updateData.study_preference = JSON.stringify(details.studyPreference);
+      }
+      if (details.motivation && Array.isArray(details.motivation)) {
+        updateData.motivation = JSON.stringify(details.motivation);
+      }
       if (details.dailyHours) updateData.daily_hours = details.dailyHours;
-      if (details.reviewModes) updateData.review_modes = JSON.stringify(details.reviewModes);
+      if (details.reviewModes && Array.isArray(details.reviewModes)) {
+        updateData.review_modes = JSON.stringify(details.reviewModes);
+      }
+      if (details.studyReminder) updateData.study_reminder = details.studyReminder;
+
+      console.log('AuthProvider: Saving update data:', updateData);
 
       const { error } = await supabase
         .from('user_profiles')

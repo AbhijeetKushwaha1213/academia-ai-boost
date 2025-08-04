@@ -1247,57 +1247,84 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          age_range: string | null
           avatar: string | null
           branch: string | null
           college: string | null
+          course: string | null
           created_at: string
           current_level: number | null
+          daily_hours: string | null
           email: string
           exam_date: string | null
           exam_type: string | null
           experience_points: number | null
           id: string
+          motivation: Json | null
           name: string
+          review_modes: Json | null
           semester: number | null
+          study_preference: Json | null
+          study_reminder: string | null
           study_streak: number | null
+          subjects: Json | null
+          target_year: string | null
           total_study_hours: number | null
           updated_at: string
           user_id: string
           user_type: string
         }
         Insert: {
+          age_range?: string | null
           avatar?: string | null
           branch?: string | null
           college?: string | null
+          course?: string | null
           created_at?: string
           current_level?: number | null
+          daily_hours?: string | null
           email: string
           exam_date?: string | null
           exam_type?: string | null
           experience_points?: number | null
           id?: string
+          motivation?: Json | null
           name: string
+          review_modes?: Json | null
           semester?: number | null
+          study_preference?: Json | null
+          study_reminder?: string | null
           study_streak?: number | null
+          subjects?: Json | null
+          target_year?: string | null
           total_study_hours?: number | null
           updated_at?: string
           user_id: string
           user_type: string
         }
         Update: {
+          age_range?: string | null
           avatar?: string | null
           branch?: string | null
           college?: string | null
+          course?: string | null
           created_at?: string
           current_level?: number | null
+          daily_hours?: string | null
           email?: string
           exam_date?: string | null
           exam_type?: string | null
           experience_points?: number | null
           id?: string
+          motivation?: Json | null
           name?: string
+          review_modes?: Json | null
           semester?: number | null
+          study_preference?: Json | null
+          study_reminder?: string | null
           study_streak?: number | null
+          subjects?: Json | null
+          target_year?: string | null
           total_study_hours?: number | null
           updated_at?: string
           user_id?: string
