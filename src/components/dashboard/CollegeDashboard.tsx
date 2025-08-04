@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Code, Calendar, Users, Trophy, BookOpen, Briefcase, Star, Zap, ArrowRight, Plus } from 'lucide-react';
 import ProjectFocusView from '../projects/ProjectFocusView';
 import { useToast } from '@/hooks/use-toast';
-import { FeatureStatusCard } from '../common/FeatureStatusCard';
+
 
 export const CollegeDashboard = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'project-focus'>('dashboard');
@@ -344,8 +344,6 @@ export const CollegeDashboard = () => {
         </div>
       </Card>
 
-      {/* Feature Status Card */}
-      <FeatureStatusCard />
     </div>
   );
 };

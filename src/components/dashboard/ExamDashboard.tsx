@@ -9,18 +9,20 @@ import { useAuth } from '../auth/AuthProvider';
 import { Target, Clock, Flame, BookOpen, TrendingUp, Calendar, Zap, Plus, Lightbulb } from 'lucide-react';
 import { StudySessionPage } from '../session/StudySessionPage';
 import { StudyPlanPage } from '../planner/StudyPlanPage';
-import { AddProjectDialog } from '../projects/AddProjectDialog';
-import { AddSkillDialog } from '../skills/AddSkillDialog';
-import { ProjectIdeasExplorer } from '../projects/ProjectIdeasExplorer';
-import { FeatureStatusCard } from '../common/FeatureStatusCard';
+import { ScheduleMockTestModal } from '../exam/ScheduleMockTestModal';
+import { ViewResultsModal } from '../exam/ViewResultsModal';
+import { DeleteTrackerModal } from '../exam/DeleteTrackerModal';
+import { RevisionLogModal } from '../exam/RevisionLogModal';
+
 
 export const ExamDashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<'dashboard' | 'session' | 'plan'>('dashboard');
-  const [showAddProject, setShowAddProject] = useState(false);
-  const [showAddSkill, setShowAddSkill] = useState(false);
-  const [showProjectIdeas, setShowProjectIdeas] = useState(false);
+  const [showScheduleMockTest, setShowScheduleMockTest] = useState(false);
+  const [showViewResults, setShowViewResults] = useState(false);
+  const [showDeleteTracker, setShowDeleteTracker] = useState(false);
+  const [showRevisionLog, setShowRevisionLog] = useState(false);
 
   const todaysPlan = [
     { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
@@ -46,20 +48,6 @@ export const ExamDashboard = () => {
     });
   };
 
-  const handleAddProject = () => {
-    console.log('Adding new project...');
-    setShowAddProject(true);
-  };
-
-  const handleAddSkill = () => {
-    console.log('Adding new skill...');
-    setShowAddSkill(true);
-  };
-
-  const handleExploreIdeas = () => {
-    console.log('Exploring project ideas...');
-    setShowProjectIdeas(true);
-  };
 
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
@@ -245,7 +233,7 @@ export const ExamDashboard = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => toast({ title: "Mock Test Planner", description: "Create and schedule mock tests for better preparation." })}
+                onClick={() => setShowScheduleMockTest(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Schedule Mock Test
@@ -253,32 +241,32 @@ export const ExamDashboard = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => toast({ title: "Previous Tests", description: "Review your past mock test performances." })}
+                onClick={() => setShowViewResults(true)}
               >
                 <Target className="w-4 h-4 mr-2" />
-                View Test Results
+                View Results
               </Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Study Tools</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Exam Tools</h3>
             <div className="space-y-3">
               <Button 
                 variant="outline" 
-                className="w-full justify-start"
-                onClick={() => toast({ title: "Topic Tracker", description: "Track your syllabus completion progress." })}
+                className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50"
+                onClick={() => setShowDeleteTracker(true)}
               >
                 <BookOpen className="w-4 h-4 mr-2" />
-                Topic Tracker
+                Delete Tracker
               </Button>
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => toast({ title: "Revision Log", description: "Plan and track your daily revision targets." })}
+                onClick={() => setShowRevisionLog(true)}
               >
                 <Lightbulb className="w-4 h-4 mr-2" />
-                Daily Revision Log
+                Revision Log
               </Button>
             </div>
           </Card>
@@ -305,14 +293,13 @@ export const ExamDashboard = () => {
           </div>
         </Card>
 
-        {/* Feature Status Card */}
-        <FeatureStatusCard />
       </div>
 
-      {/* Dialogs */}
-      <AddProjectDialog open={showAddProject} onOpenChange={setShowAddProject} />
-      <AddSkillDialog open={showAddSkill} onOpenChange={setShowAddSkill} />
-      <ProjectIdeasExplorer open={showProjectIdeas} onOpenChange={setShowProjectIdeas} />
+      {/* Exam Modals */}
+      <ScheduleMockTestModal open={showScheduleMockTest} onOpenChange={setShowScheduleMockTest} />
+      <ViewResultsModal open={showViewResults} onOpenChange={setShowViewResults} />
+      <DeleteTrackerModal open={showDeleteTracker} onOpenChange={setShowDeleteTracker} />
+      <RevisionLogModal open={showRevisionLog} onOpenChange={setShowRevisionLog} />
     </>
   );
 };
