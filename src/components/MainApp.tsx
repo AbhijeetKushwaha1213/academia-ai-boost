@@ -114,9 +114,13 @@ export const MainApp = () => {
     );
   }
 
-  // Authenticated but no user type selected - show onboarding flow
-  if (!user?.userType) {
-    console.log('MainApp: User authenticated but no userType, showing OnboardingFlow');
+  // Authenticated but incomplete onboarding - show onboarding flow
+  if (!user?.userType || !user?.name || user?.name === 'abhijeetkushwaha1213') {
+    console.log('MainApp: User authenticated but incomplete profile, showing OnboardingFlow. User data:', {
+      userType: user?.userType,
+      name: user?.name,
+      email: user?.email
+    });
     return (
       <ErrorBoundary>
         <OnboardingFlow />

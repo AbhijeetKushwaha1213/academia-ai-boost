@@ -55,7 +55,7 @@ const STEPS = [
 ];
 
 export const OnboardingFlow = () => {
-  const { updateUserType } = useAuth();
+  const { updateUserType, user } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +68,7 @@ export const OnboardingFlow = () => {
     motivation: [],
     dailyHours: '',
     reviewModes: [],
-    email: ''
+    email: user?.email || ''
   });
 
   const subjects = [
