@@ -14,7 +14,8 @@ import {
   FolderOpen,
   Settings,
   User,
-  LogOut
+  LogOut,
+  Plug
 } from 'lucide-react';
 
 interface DesktopSidebarProps {
@@ -47,6 +48,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
 
   const secondaryNavItems = [
     { id: 'generate', label: 'AI Generator', icon: Wand2 },
+    { id: 'integrations', label: 'Integrations', icon: Plug },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

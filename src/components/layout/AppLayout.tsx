@@ -179,7 +179,13 @@ export const AppLayout = ({
 
       {/* Mobile Bottom Navigation - Hide in full screen */}
       {!fullScreenMode && (
-        <MobileNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
+        <MobileNavigation 
+          user={user}
+          activeTab={activeTab} 
+          setActiveTab={handleTabChange}
+          handleSignOut={handleSignOut}
+          isOnline={isOnline}
+        />
       )}
     </div>
   );

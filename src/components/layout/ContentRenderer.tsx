@@ -9,9 +9,9 @@ import { SettingsPage } from '../settings/SettingsPage';
 import { NewAchievementsPage } from '../achievements/NewAchievementsPage';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { DiscoverResources } from '../discover/DiscoverResources';
-import { useAuth } from '../auth/AuthProvider';
-
 import { ResourceSpace } from '../resources/ResourceSpace';
+import { IntegrationsPage } from '../integrations/IntegrationsPage';
+import { useAuth } from '../auth/AuthProvider';
 
 interface ContentRendererProps {
   activeTab: string;
@@ -45,6 +45,8 @@ export const ContentRenderer = ({ activeTab, onNavigate }: ContentRendererProps)
         return <ProfilePage />;
       case 'settings':
         return <SettingsPage />;
+      case 'integrations':
+        return <IntegrationsPage />;
       case 'resources':
         return <ResourceSpace />;
       case 'notifications':
