@@ -42,6 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
+      console.log('AuthProvider: Fetching profile for user:', supabaseUser.id);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -49,20 +51,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('AuthProvider: Error fetching user profile:', error);
+        setUser(null);
         return;
       }
 
       if (data) {
+        console.log('AuthProvider: Profile data received:', data);
+        
         // Ensure user_type is properly typed
         const userType = data.user_type === 'college' ? 'college' : 'exam';
         
-        setUser({
+        const userData = {
           id: data.id,
           user_id: data.user_id,
           name: data.name,
           email: data.email,
-          userType: userType,
+          userType: userType as 'exam' | 'college',
           examType: data.exam_type || undefined,
           college: data.college || undefined,
           branch: data.branch || undefined,
@@ -73,10 +78,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           current_level: data.current_level || 1,
           experience_points: data.experience_points || 0,
           avatar: data.avatar || undefined
-        });
+        };
+        
+        console.log('AuthProvider: Setting user state with data:', userData);
+        setUser(userData);
+      } else {
+        console.log('AuthProvider: No profile data found for user');
+        setUser(null);
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+      setUser(null);
     }
   };
 
