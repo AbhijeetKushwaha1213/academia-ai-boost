@@ -13,6 +13,9 @@ import { ScheduleMockTestModal } from '../exam/ScheduleMockTestModal';
 import { ViewResultsModal } from '../exam/ViewResultsModal';
 import { DeleteTrackerModal } from '../exam/DeleteTrackerModal';
 import { RevisionLogModal } from '../exam/RevisionLogModal';
+import { useSubjects } from '@/hooks/useSubjects';
+import { useDailyStats } from '@/hooks/useDailyStats';
+import { AddSubjectDialog } from '../subjects/AddSubjectDialog';
 
 
 export const ExamDashboard = () => {
@@ -24,11 +27,16 @@ export const ExamDashboard = () => {
   const [showDeleteTracker, setShowDeleteTracker] = useState(false);
   const [showRevisionLog, setShowRevisionLog] = useState(false);
 
-  const todaysPlan = [
-    { subject: 'Physics', topic: 'Thermodynamics', duration: '45 min', status: 'completed' },
-    { subject: 'Chemistry', topic: 'Organic Reactions', duration: '30 min', status: 'current' },
-    { subject: 'Math', topic: 'Calculus Practice', duration: '60 min', status: 'pending' }
-  ];
+  const { subjects, isLoading: subjectsLoading } = useSubjects();
+  const { dailyStats, weeklyTotals } = useDailyStats();
+
+  // Calculate dynamic data
+  const todaysStudyTimeHours = dailyStats ? (dailyStats.study_time_minutes / 60).toFixed(1) : '0';
+  const syllabusComplete = subjects.length > 0 
+    ? Math.round((subjects.reduce((acc, s) => acc + s.completed_topics, 0) / subjects.reduce((acc, s) => acc + s.total_topics, 0)) * 100) || 0
+    : 0;
+  const topicsLeft = subjects.reduce((acc, s) => acc + (s.total_topics - s.completed_topics), 0);
+  const studyStreak = user?.study_streak || 0;
 
   const handleStartNextSession = () => {
     console.log('Starting next study session...');
@@ -55,29 +63,31 @@ export const ExamDashboard = () => {
 
   // Generate AI recommendation based on user data
   const getAIRecommendation = () => {
-    const currentSubject = todaysPlan.find(item => item.status === 'current');
-    const completedCount = todaysPlan.filter(item => item.status === 'completed').length;
-    const totalCount = todaysPlan.length;
-    
-    if (completedCount === totalCount) {
+    if (subjects.length === 0) {
       return {
-        title: "Excellent Progress! 🎉",
-        message: "You've completed all today's topics. Consider reviewing weak areas or starting tomorrow's topics.",
-        action: "Review Weak Topics"
-      };
-    } else if (currentSubject) {
-      return {
-        title: "Focus on Current Topic 🎯",
-        message: `You're currently working on ${currentSubject.subject} - ${currentSubject.topic}. Based on your performance, spend extra time on problem-solving.`,
-        action: "View Study Materials"
-      };
-    } else {
-      return {
-        title: "Ready for Next Challenge 💪",
-        message: "Start with your pending Math topic. Your calculus foundation is strong, so focus on advanced integration techniques.",
-        action: "Start Math Session"
+        title: "Get Started! 📚",
+        message: "Add your first subject to begin tracking your study progress.",
+        action: "Add Subject"
       };
     }
+    
+    const inProgressSubjects = subjects.filter(s => s.completed_topics < s.total_topics);
+    if (inProgressSubjects.length === 0) {
+      return {
+        title: "Excellent Progress! 🎉",
+        message: "You've completed all subjects! Consider adding more topics or reviewing completed ones.",
+        action: "Review Completed"
+      };
+    }
+    
+    const nextSubject = inProgressSubjects[0];
+    const progressPercent = Math.round((nextSubject.completed_topics / nextSubject.total_topics) * 100);
+    
+    return {
+      title: `Focus on ${nextSubject.name} 🎯`,
+      message: `You're ${progressPercent}% through ${nextSubject.name}. Keep the momentum going!`,
+      action: "Continue Learning"
+    };
   };
 
   const aiRec = getAIRecommendation();
@@ -104,10 +114,10 @@ export const ExamDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">Good morning, {user?.name || 'Student'}! 🎯</h2>
-              <p className="text-indigo-100">Day 47 of your {user?.examType || 'JEE'} preparation journey</p>
+              <p className="text-indigo-100">Day {studyStreak} of your {user?.examType || 'exam'} preparation journey</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold">87%</div>
+              <div className="text-3xl font-bold">{syllabusComplete}%</div>
               <div className="text-indigo-200 text-sm">Syllabus Complete</div>
             </div>
           </div>
@@ -119,7 +129,7 @@ export const ExamDashboard = () => {
             <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-2">
               <Flame className="w-5 h-5 text-orange-600" />
             </div>
-            <div className="text-2xl font-bold text-gray-900">47</div>
+            <div className="text-2xl font-bold text-gray-900">{studyStreak}</div>
             <div className="text-sm text-gray-600">Day Streak</div>
           </Card>
 
@@ -127,7 +137,7 @@ export const ExamDashboard = () => {
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
               <Clock className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="text-2xl font-bold text-gray-900">4.5h</div>
+            <div className="text-2xl font-bold text-gray-900">{todaysStudyTimeHours}h</div>
             <div className="text-sm text-gray-600">Today</div>
           </Card>
 
@@ -135,7 +145,7 @@ export const ExamDashboard = () => {
             <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
               <Target className="w-5 h-5 text-green-600" />
             </div>
-            <div className="text-2xl font-bold text-gray-900">15</div>
+            <div className="text-2xl font-bold text-gray-900">{topicsLeft}</div>
             <div className="text-sm text-gray-600">Topics Left</div>
           </Card>
         </div>
@@ -143,46 +153,64 @@ export const ExamDashboard = () => {
         {/* Today's Plan */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900">Today's Study Plan</h3>
-            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">On Track</Badge>
+            <h3 className="text-xl font-bold text-gray-900">Your Subjects</h3>
+            <AddSubjectDialog />
           </div>
 
-          <div className="space-y-3">
-            {todaysPlan.map((item, index) => (
-              <div key={index} className={`flex items-center p-3 rounded-lg border ${
-                item.status === 'completed' ? 'bg-green-50 border-green-200' :
-                item.status === 'current' ? 'bg-blue-50 border-blue-200' :
-                'bg-gray-50 border-gray-200'
-              }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                  item.status === 'completed' ? 'bg-green-500' :
-                  item.status === 'current' ? 'bg-blue-500' :
-                  'bg-gray-400'
-                }`}>
-                  <BookOpen className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{item.subject} - {item.topic}</h4>
-                  <p className="text-sm text-gray-600">{item.duration}</p>
-                </div>
-                <Badge variant={
-                  item.status === 'completed' ? 'secondary' :
-                  item.status === 'current' ? 'default' : 'outline'
-                }>
-                  {item.status === 'completed' ? 'Done' :
-                   item.status === 'current' ? 'Current' : 'Pending'}
-                </Badge>
-              </div>
-            ))}
-          </div>
+          {subjectsLoading ? (
+            <div className="text-center py-8 text-gray-500">Loading subjects...</div>
+          ) : subjects.length === 0 ? (
+            <div className="text-center py-8">
+              <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Subjects Added</h4>
+              <p className="text-gray-600 mb-4">Start by adding your first subject to track your progress</p>
+              <AddSubjectDialog trigger={
+                <Button className="bg-indigo-600 hover:bg-indigo-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Subject
+                </Button>
+              } />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {subjects.map((subject) => {
+                const progress = subject.total_topics > 0 ? (subject.completed_topics / subject.total_topics) * 100 : 0;
+                const isCompleted = subject.completed_topics === subject.total_topics;
+                
+                return (
+                  <div key={subject.id} className={`flex items-center p-3 rounded-lg border ${
+                    isCompleted ? 'bg-green-50 border-green-200' :
+                    progress > 50 ? 'bg-blue-50 border-blue-200' :
+                    'bg-gray-50 border-gray-200'
+                  }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                      isCompleted ? 'bg-green-500' :
+                      progress > 50 ? 'bg-blue-500' :
+                      'bg-gray-400'
+                    }`}>
+                      <BookOpen className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">{subject.name}</h4>
+                      <p className="text-sm text-gray-600">{subject.completed_topics} / {subject.total_topics} topics</p>
+                    </div>
+                    <Badge variant={isCompleted ? 'secondary' : progress > 50 ? 'default' : 'outline'}>
+                      {Math.round(progress)}%
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Button 
               className="bg-indigo-600 hover:bg-indigo-700"
               onClick={handleStartNextSession}
+              disabled={subjects.length === 0}
             >
               <Zap className="w-4 h-4 mr-2" />
-              Start Next Session
+              Start Session
             </Button>
             <Button 
               variant="outline"
@@ -198,31 +226,26 @@ export const ExamDashboard = () => {
         <Card className="p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Subject Progress</h3>
           
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Physics</span>
-                <span className="font-medium">85%</span>
-              </div>
-              <Progress value={85} className="h-2" />
+          {subjects.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">
+              No subjects to track yet
             </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Chemistry</span>
-                <span className="font-medium">78%</span>
-              </div>
-              <Progress value={78} className="h-2" />
+          ) : (
+            <div className="space-y-4">
+              {subjects.map((subject) => {
+                const progress = subject.total_topics > 0 ? (subject.completed_topics / subject.total_topics) * 100 : 0;
+                return (
+                  <div key={subject.id}>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">{subject.name}</span>
+                      <span className="font-medium">{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+                );
+              })}
             </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Mathematics</span>
-                <span className="font-medium">92%</span>
-              </div>
-              <Progress value={92} className="h-2" />
-            </div>
-          </div>
+          )}
         </Card>
 
         {/* Exam-Focused Tools Section */}

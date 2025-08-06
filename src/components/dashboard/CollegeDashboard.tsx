@@ -7,12 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Code, Calendar, Users, Trophy, BookOpen, Briefcase, Star, Zap, ArrowRight, Plus } from 'lucide-react';
 import ProjectFocusView from '../projects/ProjectFocusView';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../auth/AuthProvider';
 
 
 export const CollegeDashboard = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'project-focus'>('dashboard');
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [projects, setProjects] = useState([
     { 
@@ -150,18 +152,18 @@ export const CollegeDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <Card className="p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Hey there! 🚀</h2>
-            <p className="text-purple-100">Semester 5 • Computer Science Engineering</p>
+        <Card className="p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Hey there, {user?.name || 'Student'}! 🚀</h2>
+              <p className="text-purple-100">{user?.semester ? `Semester ${user.semester}` : 'College'} • {user?.branch || 'Computer Science'}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">8.4</div>
+              <div className="text-purple-200 text-sm">Current CGPA</div>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">8.4</div>
-            <div className="text-purple-200 text-sm">Current CGPA</div>
-          </div>
-        </div>
-      </Card>
+        </Card>
 
       {/* Quick Overview */}
       <div className="grid grid-cols-3 gap-4">

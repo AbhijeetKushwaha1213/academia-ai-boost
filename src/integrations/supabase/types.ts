@@ -262,6 +262,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_stats: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          sessions_count: number
+          study_time_minutes: number
+          topics_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          sessions_count?: number
+          study_time_minutes?: number
+          topics_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          sessions_count?: number
+          study_time_minutes?: number
+          topics_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string | null
@@ -1027,6 +1060,8 @@ export type Database = {
           id: string
           session_date: string
           session_type: string
+          subject_id: string | null
+          topic_name: string | null
           topics_covered: string[] | null
           user_id: string
         }
@@ -1038,6 +1073,8 @@ export type Database = {
           id?: string
           session_date?: string
           session_type: string
+          subject_id?: string | null
+          topic_name?: string | null
           topics_covered?: string[] | null
           user_id: string
         }
@@ -1049,7 +1086,47 @@ export type Database = {
           id?: string
           session_date?: string
           session_type?: string
+          subject_id?: string | null
+          topic_name?: string | null
           topics_covered?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          completed_topics: number
+          created_at: string
+          id: string
+          name: string
+          total_topics: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_topics?: number
+          created_at?: string
+          id?: string
+          name: string
+          total_topics?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_topics?: number
+          created_at?: string
+          id?: string
+          name?: string
+          total_topics?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

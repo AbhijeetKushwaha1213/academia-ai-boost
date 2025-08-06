@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
+import { useFlashcards } from '@/hooks/useFlashcards';
+import { useAchievements } from '@/hooks/useAchievements';
 
 interface ProgressSummaryProps {
   studyStreak: number;
@@ -29,6 +31,13 @@ export const ProgressSummary = ({
   flashcardsCount,
   weeklyGoalProgress
 }: ProgressSummaryProps) => {
+  const { flashcards } = useFlashcards();
+  const { achievements } = useAchievements();
+  
+  // Use actual data instead of props when available
+  const actualFlashcardsCount = flashcards?.length || flashcardsCount;
+  const actualAchievementsCount = achievements?.length || achievementsCount;
+  
   const currentLevel = Math.floor(experiencePoints / 1000) + 1;
   const progressToNextLevel = (experiencePoints % 1000) / 1000 * 100;
 
@@ -48,13 +57,13 @@ export const ProgressSummary = ({
     {
       icon: Trophy,
       label: 'Achievements',
-      value: achievementsCount.toString(),
+      value: actualAchievementsCount.toString(),
       color: 'text-yellow-600 bg-yellow-100'
     },
     {
       icon: BookOpen,
       label: 'Flashcards',
-      value: flashcardsCount.toString(),
+      value: actualFlashcardsCount.toString(),
       color: 'text-purple-600 bg-purple-100'
     }
   ];
