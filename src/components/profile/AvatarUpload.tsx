@@ -63,16 +63,16 @@ export const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: Avatar
     try {
       console.log('AvatarUpload: Starting upload for user:', user.user_id);
       
-      // Create unique filename
+      // Create unique filename with folder structure
       const fileExt = file.name.split('.').pop();
-      const fileName = `avatar-${user.user_id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.user_id}/avatar-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
 
       if (error) {

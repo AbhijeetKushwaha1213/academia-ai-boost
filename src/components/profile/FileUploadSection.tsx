@@ -62,9 +62,9 @@ export const FileUploadSection = ({ onFileUpload }: FileUploadSectionProps) => {
     setUploadProgress(0);
 
     try {
-      // Create unique filename
+      // Create unique filename with folder structure
       const fileExt = file.name.split('.').pop();
-      const fileName = `document-${user.user_id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.user_id}/document-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage

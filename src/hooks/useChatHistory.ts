@@ -33,47 +33,52 @@ export const useChatHistory = () => {
     queryFn: async () => {
       if (!user?.user_id) return [];
       
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('user_id', user.user_id)
-        .order('updated_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.user_id)
+          .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching chat sessions:', error);
-        throw error;
-      }
-
-      // Transform the data to match our ChatSession interface
-      return (data || []).map(session => {
-        let parsedMessages = [];
-        
-        try {
-          // Handle both array and object formats from the database
-          if (Array.isArray(session.messages)) {
-            parsedMessages = session.messages.map((msg: any) => ({
-              role: (msg.role === 'user' || msg.role === 'assistant') ? msg.role : 'user',
-              content: String(msg.content || ''),
-              timestamp: msg.timestamp || new Date().toISOString()
-            }));
-          } else if (session.messages && typeof session.messages === 'object') {
-            // Handle case where messages might be stored as an object
-            parsedMessages = [];
-          }
-        } catch (e) {
-          console.error('Error parsing messages for session:', session.id, e);
-          parsedMessages = [];
+        if (error) {
+          console.error('Error fetching chat sessions:', error);
+          throw error;
         }
 
-        return {
-          id: session.id,
-          title: session.title,
-          topic: session.topic,
-          messages: parsedMessages,
-          created_at: session.created_at,
-          updated_at: session.updated_at
-        } as ChatSession;
-      });
+        // Transform the data to match our ChatSession interface
+        return (data || []).map(session => {
+          let parsedMessages = [];
+          
+          try {
+            // Handle both array and object formats from the database
+            if (Array.isArray(session.messages)) {
+              parsedMessages = session.messages.map((msg: any) => ({
+                role: (msg.role === 'user' || msg.role === 'assistant') ? msg.role : 'user',
+                content: String(msg.content || ''),
+                timestamp: msg.timestamp || new Date().toISOString()
+              }));
+            } else if (session.messages && typeof session.messages === 'object') {
+              // Handle case where messages might be stored as an object
+              parsedMessages = [];
+            }
+          } catch (e) {
+            console.error('Error parsing messages for session:', session.id, e);
+            parsedMessages = [];
+          }
+
+          return {
+            id: session.id,
+            title: session.title,
+            topic: session.topic,
+            messages: parsedMessages,
+            created_at: session.created_at,
+            updated_at: session.updated_at
+          } as ChatSession;
+        });
+      } catch (e) {
+        console.error('Failed to fetch chat sessions:', e);
+        return [];
+      }
     },
     enabled: !!user?.user_id,
   });

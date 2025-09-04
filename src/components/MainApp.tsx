@@ -115,11 +115,15 @@ export const MainApp = () => {
   }
 
   // Authenticated but incomplete onboarding - show onboarding flow
-  if (!user?.userType || !user?.name || user?.name === 'abhijeetkushwaha1213') {
+  if (!user?.userType || !user?.name || 
+      (user?.userType === 'exam' && !user?.examType) ||
+      (user?.userType === 'college' && !user?.college)) {
     console.log('MainApp: User authenticated but incomplete profile, showing OnboardingFlow. User data:', {
       userType: user?.userType,
       name: user?.name,
-      email: user?.email
+      email: user?.email,
+      examType: user?.examType,
+      college: user?.college
     });
     return (
       <ErrorBoundary>
