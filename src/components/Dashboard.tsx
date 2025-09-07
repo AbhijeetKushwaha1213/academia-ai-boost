@@ -167,13 +167,13 @@ export const Dashboard = () => {
             </Card>
 
 
-            {/* Achievement Card */}
+            {/* Achievement Card - Remove hardcoded data */}
             <Card className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Achievement</h3>
-              <div className="text-center">
-                <Star className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-                <h4 className="font-semibold text-gray-900 mb-1">Physics Master</h4>
-                <p className="text-sm text-gray-600 mb-4">Completed 100 physics problems!</p>
+              <div className="text-center py-4">
+                <Star className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <h4 className="font-semibold text-gray-600 mb-1">No achievements yet</h4>
+                <p className="text-sm text-gray-500 mb-4">Complete study goals to unlock achievements!</p>
                 <Button variant="ghost" size="sm" className="text-indigo-600">
                   View All Badges
                   <ChevronRight className="w-4 h-4 ml-1" />

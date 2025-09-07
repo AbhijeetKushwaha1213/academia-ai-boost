@@ -1163,6 +1163,36 @@ export type Database = {
           },
         ]
       }
+      user_achievements: {
+        Row: {
+          category: string | null
+          description: string | null
+          earned_at: string
+          icon: string | null
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          earned_at?: string
+          icon?: string | null
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          earned_at?: string
+          icon?: string | null
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_goals: {
         Row: {
           created_at: string
@@ -1409,6 +1439,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_projects: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          progress: number
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          progress?: number
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          progress?: number
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_resources: {
         Row: {
           content: string | null
@@ -1453,24 +1522,72 @@ export type Database = {
       }
       user_skills: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           proficiency_level: number | null
+          progress: number | null
+          skill: string | null
           skill_name: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           proficiency_level?: number | null
+          progress?: number | null
+          skill?: string | null
           skill_name: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           proficiency_level?: number | null
+          progress?: number | null
+          skill?: string | null
           skill_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          active_clients: number | null
+          cgpa: number | null
+          created_at: string
+          id: string
+          monthly_earnings: number | null
+          projects_completed: number | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_clients?: number | null
+          cgpa?: number | null
+          created_at?: string
+          id?: string
+          monthly_earnings?: number | null
+          projects_completed?: number | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_clients?: number | null
+          cgpa?: number | null
+          created_at?: string
+          id?: string
+          monthly_earnings?: number | null
+          projects_completed?: number | null
+          rating?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
