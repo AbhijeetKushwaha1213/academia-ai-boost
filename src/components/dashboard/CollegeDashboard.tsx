@@ -125,39 +125,39 @@ export const CollegeDashboard = () => {
           <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
             <BookOpen className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">{projects.length}</div>
-          <div className="text-sm text-gray-600">Active Projects</div>
+          <div className="text-2xl font-bold text-foreground">{projects.length}</div>
+          <div className="text-sm text-muted-foreground">Active Projects</div>
         </Card>
 
         <Card className="p-4 text-center">
           <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
             <Code className="w-5 h-5 text-green-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">{skills.length}</div>
-          <div className="text-sm text-gray-600">Skills Learning</div>
+          <div className="text-2xl font-bold text-foreground">{skills.length}</div>
+          <div className="text-sm text-muted-foreground">Skills Learning</div>
         </Card>
 
         <Card className="p-4 text-center">
           <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
             <Briefcase className="w-5 h-5 text-purple-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">₹{userStats?.monthly_earnings || 0}</div>
-          <div className="text-sm text-gray-600">This Month</div>
+          <div className="text-2xl font-bold text-foreground">₹{userStats?.monthly_earnings || 0}</div>
+          <div className="text-sm text-muted-foreground">This Month</div>
         </Card>
       </div>
 
       {/* Current Projects */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Active Projects</h3>
+          <h3 className="text-xl font-bold text-foreground">Active Projects</h3>
           <AddProjectDialog />
         </div>
 
         {projects.length === 0 ? (
           <div className="text-center py-8">
-            <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No Projects Added</h4>
-            <p className="text-gray-600 mb-4">Start by adding your first project to track your progress</p>
+            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-foreground mb-2">No Projects Added</h4>
+            <p className="text-muted-foreground mb-4">Start by adding your first project to track your progress</p>
             <AddProjectDialog trigger={
               <Button className="bg-indigo-600 hover:bg-indigo-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -168,7 +168,7 @@ export const CollegeDashboard = () => {
         ) : (
           <div className="space-y-4">
             {projects.map((project) => (
-              <div key={project.id} className="flex items-center p-4 bg-gray-50 rounded-lg">
+              <div key={project.id} className="flex items-center p-4 bg-muted rounded-lg">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 ${
                   project.type === 'coding' ? 'bg-blue-100' :
                   project.type === 'academic' ? 'bg-green-100' : 'bg-purple-100'
@@ -178,11 +178,11 @@ export const CollegeDashboard = () => {
                    <Briefcase className="w-5 h-5 text-purple-600" />}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                  <h4 className="font-semibold text-foreground">{project.name}</h4>
                   <div className="flex items-center space-x-4 mt-2">
                     <div className="flex items-center space-x-2">
                       <Progress value={project.progress} className="w-20 h-2" />
-                      <span className="text-sm text-gray-600">{project.progress}%</span>
+                      <span className="text-sm text-muted-foreground">{project.progress}%</span>
                     </div>
                     {project.deadline && (
                       <Badge variant="outline" className="text-xs">
@@ -225,15 +225,15 @@ export const CollegeDashboard = () => {
       {/* Skills Progress */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Learning Progress</h3>
+          <h3 className="text-lg font-bold text-foreground">Learning Progress</h3>
           <AddSkillDialog />
         </div>
         
         {skills.length === 0 ? (
           <div className="text-center py-8">
-            <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No Skills Added</h4>
-            <p className="text-gray-600 mb-4">Start by adding your first skill to track your learning progress</p>
+            <Star className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-foreground mb-2">No Skills Added</h4>
+            <p className="text-muted-foreground mb-4">Start by adding your first skill to track your learning progress</p>
             <AddSkillDialog trigger={
               <Button className="bg-indigo-600 hover:bg-indigo-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -244,11 +244,11 @@ export const CollegeDashboard = () => {
         ) : (
           <div className="space-y-4">
             {skills.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={item.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900">{item.skill}</span>
+                      <span className="font-medium text-foreground">{item.skill}</span>
                       <Badge variant="secondary" className="text-xs">{item.category}</Badge>
                     </div>
                     <span className="text-sm font-medium">{item.progress}%</span>
@@ -282,35 +282,35 @@ export const CollegeDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Remove hardcoded achievement */}
       <Card className="p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Achievement</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">Recent Achievement</h3>
         <div className="text-center py-4">
-          <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h4 className="font-semibold text-gray-600 mb-1">No achievements yet</h4>
-          <p className="text-sm text-gray-500">Complete projects to unlock achievements!</p>
+          <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <h4 className="font-semibold text-muted-foreground mb-1">No achievements yet</h4>
+          <p className="text-sm text-muted-foreground">Complete projects to unlock achievements!</p>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Freelance Status</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">Freelance Status</h3>
         {userStats ? (
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-600">Active Clients</span>
+              <span className="text-muted-foreground">Active Clients</span>
               <span className="font-medium">{userStats?.active_clients || 0}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Projects Done</span>
+              <span className="text-muted-foreground">Projects Done</span>
               <span className="font-medium">{userStats?.projects_completed || 0}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Rating</span>
+              <span className="text-muted-foreground">Rating</span>
               <span className="font-medium">{userStats?.rating?.toFixed(1) || '0.0'} ⭐</span>
             </div>
           </div>
         ) : (
           <div className="text-center py-4">
-            <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No freelance data yet</p>
+            <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No freelance data yet</p>
           </div>
         )}
       </Card>
@@ -323,8 +323,8 @@ export const CollegeDashboard = () => {
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="font-bold text-gray-900 mb-2">Career Tip</h4>
-            <p className="text-gray-700">
+            <h4 className="font-bold text-foreground mb-2">Career Tip</h4>
+            <p className="text-muted-foreground">
               {projects.length === 0 
                 ? "Start building projects to showcase your skills and advance your career!"
                 : skills.length === 0
