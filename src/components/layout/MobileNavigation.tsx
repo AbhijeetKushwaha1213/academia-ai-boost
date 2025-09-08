@@ -69,9 +69,9 @@ export const MobileNavigation = ({
         <SheetContent side="left" className="w-80 p-0">
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-6 border-b">
+            <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">StudyMate AI</h2>
+                <h2 className="text-lg font-semibold text-foreground">StudyMate AI</h2>
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -84,19 +84,19 @@ export const MobileNavigation = ({
               
               {user && (
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-medium text-sm">
                       {user.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="font-medium text-foreground truncate">{user.name}</p>
                     <div className="flex items-center space-x-2">
                       <Badge variant="secondary" className="text-xs">
                         {user.userType === 'college' ? 'College' : 'Exam Prep'}
                       </Badge>
                       {!isOnline && (
-                        <Badge variant="outline" className="text-xs text-red-600">
+                        <Badge variant="outline" className="text-xs text-destructive">
                           Offline
                         </Badge>
                       )}
@@ -120,15 +120,15 @@ export const MobileNavigation = ({
                         onClick={() => handleNavigation(item.id)}
                         className={`w-full flex items-center justify-between px-3 py-3 text-left rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-accent text-accent-foreground border border-accent'
+                            : 'text-foreground hover:bg-accent/50'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                          <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-500'}`} />
+                          <Icon className={`w-5 h-5 ${isActive ? 'text-accent-foreground' : 'text-muted-foreground'}`} />
                           <span className="font-medium">{item.label}</span>
                         </div>
-                        {isActive && <ChevronRight className="w-4 h-4 text-indigo-600" />}
+                        {isActive && <ChevronRight className="w-4 h-4 text-accent-foreground" />}
                       </button>
                     );
                   })}
@@ -150,15 +150,15 @@ export const MobileNavigation = ({
                         onClick={() => handleNavigation(item.id)}
                         className={`w-full flex items-center justify-between px-3 py-3 text-left rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-accent text-accent-foreground border border-accent'
+                            : 'text-foreground hover:bg-accent/50'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                          <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-500'}`} />
+                          <Icon className={`w-5 h-5 ${isActive ? 'text-accent-foreground' : 'text-muted-foreground'}`} />
                           <span className="font-medium">{item.label}</span>
                         </div>
-                        {isActive && <ChevronRight className="w-4 h-4 text-indigo-600" />}
+                        {isActive && <ChevronRight className="w-4 h-4 text-accent-foreground" />}
                       </button>
                     );
                   })}
@@ -167,11 +167,11 @@ export const MobileNavigation = ({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t border-border">
               <Button
                 onClick={handleSignOut}
                 variant="outline"
-                className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
+                className="w-full justify-start text-destructive border-destructive/20 hover:bg-destructive/10"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out

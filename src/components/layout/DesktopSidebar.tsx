@@ -53,16 +53,16 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200 sticky top-0">
+    <div className="h-full flex flex-col bg-background border-r border-border sticky top-0">
       {/* Header */}
-      <div className="flex items-center h-16 px-6 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center h-16 px-6 border-b border-border flex-shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">S</span>
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 text-sm">StudyMate AI</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="font-bold text-foreground text-sm">StudyMate AI</h1>
+            <p className="text-xs text-muted-foreground">
               {user.userType === 'exam' ? 'Exam Prep' : 'College'}
             </p>
           </div>
@@ -70,16 +70,16 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
       </div>
 
       {/* User Profile */}
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
+      <div className="p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-10 h-10">
-            <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+            <AvatarFallback className="text-sm font-medium bg-primary text-primary-foreground">
               {getInitials(user.name || 'U')}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
         
@@ -88,7 +88,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
             <Badge variant="secondary" className="text-xs">
               Level {user.current_level || 1}
             </Badge>
-            <span className="text-gray-500">{user.experience_points || 0} XP</span>
+            <span className="text-muted-foreground">{user.experience_points || 0} XP</span>
           </div>
           <Button
             variant="ghost"
@@ -113,7 +113,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
                 key={item.id}
                 variant={isActive ? "secondary" : "ghost"}
                 className={`w-full justify-start h-9 px-3 transition-all duration-200 ${
-                  isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-gray-700 hover:bg-gray-50'
+                  isActive ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'
                 }`}
                 onClick={() => onTabChange(item.id)}
               >
@@ -124,8 +124,8 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
           })}
         </div>
 
-        <div className="pt-4 border-t border-gray-200">
-          <p className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+        <div className="pt-4 border-t border-border">
+          <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Tools
           </p>
           <div className="space-y-1">
@@ -138,7 +138,7 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
                   key={item.id}
                   variant={isActive ? "secondary" : "ghost"}
                   className={`w-full justify-start h-9 px-3 transition-all duration-200 ${
-                    isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-gray-700 hover:bg-gray-50'
+                    isActive ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'
                   }`}
                   onClick={() => onTabChange(item.id)}
                 >
@@ -152,10 +152,10 @@ export const DesktopSidebar = ({ activeTab, onTabChange, onSignOut }: DesktopSid
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 flex-shrink-0">
+      <div className="p-4 border-t border-border flex-shrink-0">
         <Button
           variant="ghost"
-          className="w-full justify-start h-9 px-3 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+          className="w-full justify-start h-9 px-3 text-foreground hover:bg-accent/50 transition-all duration-200"
           onClick={onSignOut}
         >
           <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />

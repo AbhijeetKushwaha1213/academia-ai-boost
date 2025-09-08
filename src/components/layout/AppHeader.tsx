@@ -30,7 +30,7 @@ export const AppHeader = ({
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 lg:border-0">
+    <header className="bg-background border-b border-border lg:border-0">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
         {/* Mobile menu button */}
         <Button
@@ -44,10 +44,10 @@ export const AppHeader = ({
 
         {/* Logo - visible on mobile only */}
         <div className="flex items-center space-x-3 lg:hidden">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">S</span>
           </div>
-          <h1 className="font-bold text-gray-900 text-lg">StudyMate AI</h1>
+          <h1 className="font-bold text-foreground text-lg">StudyMate AI</h1>
         </div>
 
         {/* Right side */}
@@ -70,7 +70,7 @@ export const AppHeader = ({
           {/* User avatar - mobile only */}
           <div className="lg:hidden">
             <Avatar className="w-8 h-8">
-              <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+              <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
                 {getInitials(user?.name || 'U')}
               </AvatarFallback>
             </Avatar>
